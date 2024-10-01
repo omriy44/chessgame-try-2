@@ -310,7 +310,7 @@ function computerMove() {
     console.log("Starting computer move");
     
     const startTime = Date.now();
-    const timeLimit = 6000; // 6 seconds time limit
+    const timeLimit = 15000; // 15 seconds time limit
 
     const possibleMoves = getAllPossibleMoves(false);
     
@@ -326,47 +326,38 @@ function computerMove() {
 
     let bestMove = null;
     let bestScore = -Infinity;
+    let depth = 1;
 
-    for (const move of possibleMoves) {
-        if (Date.now() - startTime > timeLimit) {
-            console.log("Time limit reached");
-            break;
-        }
+    while (Date.now() - startTime < timeLimit) {
+        let currentBestMove = null;
+        let currentBestScore = -Infinity;
+        let alpha = -Infinity;
+        let beta = Infinity;
 
-        const oldBoard = JSON.parse(JSON.stringify(board));
-        makeMove(move);
-        
-        // Evaluate this move
-        let score = evaluateBoard();
-        
-        // Look one move ahead
-        const opponentMoves = getAllPossibleMoves(true);
-        let worstOpponentMove = Infinity;
-        
-        for (const opponentMove of opponentMoves) {
-            const oldOpponentBoard = JSON.parse(JSON.stringify(board));
-            makeMove(opponentMove);
-            const opponentScore = evaluateBoard();
-            if (opponentScore < worstOpponentMove) {
-                worstOpponentMove = opponentScore;
+        for (const move of possibleMoves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const score = minimax(depth - 1, alpha, beta, true, startTime, timeLimit);
+            board = oldBoard;
+
+            if (score > currentBestScore) {
+                currentBestScore = score;
+                currentBestMove = move;
             }
-            board = oldOpponentBoard;
-            
-            if (Date.now() - startTime > timeLimit) {
-                console.log("Time limit reached during opponent move evaluation");
+            alpha = Math.max(alpha, score);
+
+            if (Date.now() - startTime >= timeLimit) {
+                console.log(`Time limit reached at depth ${depth}`);
                 break;
             }
         }
-        
-        // Consider the worst opponent move in our evaluation
-        score = Math.min(score, worstOpponentMove);
-        
-        board = oldBoard;
 
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
+        if (currentBestMove) {
+            bestMove = currentBestMove;
+            bestScore = currentBestScore;
         }
+
+        depth++;
     }
 
     if (!bestMove) {
@@ -374,12 +365,46 @@ function computerMove() {
         console.log("Choosing random move");
     }
 
-    console.log(`Computer chooses move: ${bestMove}`);
+    console.log(`Computer chooses move: ${bestMove} with score ${bestScore} at depth ${depth - 1}`);
     makeMove(bestMove);
     isPlayerTurn = true;
     updateBoard();
 
     console.log(`Move calculation took ${Date.now() - startTime} ms`);
+}
+
+function minimax(depth, alpha, beta, isMaximizingPlayer, startTime, timeLimit) {
+    if (Date.now() - startTime >= timeLimit || depth === 0) {
+        return evaluateBoard();
+    }
+
+    const moves = getAllPossibleMoves(isMaximizingPlayer);
+
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimax(depth - 1, alpha, beta, false, startTime, timeLimit);
+            board = oldBoard;
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimax(depth - 1, alpha, beta, true, startTime, timeLimit);
+            board = oldBoard;
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
 }
 
 function getAllPossibleMoves(isPlayerMove) {
