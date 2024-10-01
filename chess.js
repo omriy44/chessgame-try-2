@@ -250,8 +250,8 @@ function evaluateBoard() {
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece !== ' ') {
-                score += PIECE_VALUES[piece];
+            if (piece && piece !== ' ') {
+                score += PIECE_VALUES[piece] || 0;
                 // Add positional bonuses
                 score += getPositionalBonus(piece, i, j);
             }
@@ -261,6 +261,11 @@ function evaluateBoard() {
 }
 
 function getPositionalBonus(piece, rank, file) {
+    if (!piece) {
+        console.error(`Undefined piece at rank ${rank}, file ${file}`);
+        return 0;
+    }
+
     const pawnPositionBonus = [
         [0, 0, 0, 0, 0, 0, 0, 0],
         [50, 50, 50, 50, 50, 50, 50, 50],
@@ -283,14 +288,16 @@ function getPositionalBonus(piece, rank, file) {
         [-50, -40, -30, -30, -30, -30, -40, -50]
     ];
 
-    // Add more positional bonuses for other pieces as needed
+    const pieceType = piece.toLowerCase();
+    const isWhite = piece === piece.toUpperCase();
 
-    if (piece.toLowerCase() === 'p') {
-        return pawnPositionBonus[rank][file];
-    } else if (piece.toLowerCase() === 'n') {
-        return knightPositionBonus[rank][file];
-    } else {
-        return 0;
+    switch (pieceType) {
+        case 'p':
+            return isWhite ? pawnPositionBonus[rank][file] : -pawnPositionBonus[7 - rank][file];
+        case 'n':
+            return isWhite ? knightPositionBonus[rank][file] : -knightPositionBonus[7 - rank][file];
+        default:
+            return 0;
     }
 }
 
