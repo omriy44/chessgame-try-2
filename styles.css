@@ -1,8 +1,9 @@
 body {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     background-color: #f0f0f0;
 }
@@ -96,4 +97,10 @@ input, button {
     margin-top: 20px;
     font-size: 24px;
     text-align: center;
+}
+
+#debug {
+    margin-top: 20px;
+    font-family: monospace;
+    white-space: pre-wrap;
 }
