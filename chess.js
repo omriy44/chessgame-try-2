@@ -121,8 +121,8 @@ function drop(event) {
     }
 }
 
-function isValidMove(move, isPlayerTurn) {
-    console.log(`Checking if move ${move} is valid for ${isPlayerTurn ? 'player' : 'computer'}`);
+function isValidMove(move, isPlayerMove) {
+    console.log(`Checking if move ${move} is valid for ${isPlayerMove ? 'player' : 'computer'}`);
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
@@ -140,7 +140,7 @@ function isValidMove(move, isPlayerTurn) {
 
     // Check if the piece belongs to the current player
     const isPieceWhite = piece === piece.toUpperCase();
-    if (piece === ' ' || isPieceWhite !== isPlayerTurn) {
+    if (piece === ' ' || isPieceWhite !== isPlayerMove) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
@@ -149,7 +149,7 @@ function isValidMove(move, isPlayerTurn) {
     console.log(`Target piece: ${targetPiece}`);
 
     // Check if the target square is empty or contains an opponent's piece
-    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) === isPlayerTurn) {
+    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) === isPieceWhite) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
@@ -239,18 +239,18 @@ function computerMove() {
     console.log("Waiting for player's move...");
 }
 
-function getAllPossibleMoves(isWhite) {
+function getAllPossibleMoves(isPlayerMove) {
     const moves = [];
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhite) {
+            if (piece !== ' ' && (piece === piece.toUpperCase()) === isPlayerMove) {
                 const from = `${String.fromCharCode(97 + j)}${8 - i}`;
                 for (let x = 0; x < BOARD_SIZE; x++) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
                         const to = `${String.fromCharCode(97 + y)}${8 - x}`;
                         const move = `${from}-${to}`;
-                        if (isValidMove(move, isWhite)) {
+                        if (isValidMove(move, isPlayerMove)) {
                             moves.push(move);
                         }
                     }
