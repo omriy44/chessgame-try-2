@@ -194,14 +194,19 @@ function makeMove(move) {
 }
 
 function computerMove() {
-    const depth = 3;
-    const bestMove = findBestMove(depth);
+    const bestMove = findBestMove(3); // 3 is the depth of search
     if (bestMove) {
         makeMove(bestMove);
         isPlayerTurn = true;
         updateBoard();
     } else {
-        alert("Game over. No more moves for the computer.");
+        console.log("No valid moves found for computer");
+        // Check if the computer's king is in check
+        if (isInCheck(!isPlayerTurn)) {
+            alert("Checkmate! You win!");
+        } else {
+            alert("Stalemate! The game is a draw.");
+        }
     }
 }
 
@@ -211,9 +216,9 @@ function findBestMove(depth) {
     const moves = getAllPossibleMoves(false);
     
     for (const move of moves) {
-        const capturedPiece = makeMove(move);
-        const score = minimax(depth - 1, false, -Infinity, Infinity);
-        undoMove(move, capturedPiece);
+        makeMove(move);
+        const score = minimax(depth - 1, true, -Infinity, Infinity);
+        undoMove(move);
         
         if (score > bestScore) {
             bestScore = score;
@@ -303,6 +308,35 @@ function getAllPossibleMoves(isWhite) {
         }
     }
     return moves;
+}
+
+// Add this function to check if a king is in check
+function isInCheck(isWhiteKing) {
+    // Find the king's position
+    let kingPos;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] === (isWhiteKing ? 'K' : 'k')) {
+                kingPos = { rank: i, file: j };
+                break;
+            }
+        }
+        if (kingPos) break;
+    }
+
+    // Check if any opponent's piece can attack the king
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j];
+            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhiteKing) {
+                const move = `${String.fromCharCode(97 + j)}${8 - i}-${String.fromCharCode(97 + kingPos.file)}${8 - kingPos.rank}`;
+                if (isValidMove(move)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 window.onload = function() {
