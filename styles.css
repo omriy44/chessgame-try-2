@@ -5,6 +5,17 @@
     font-family: Arial, sans-serif;
 }
 
+#board-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#board-with-ranks {
+    display: flex;
+    flex-direction: row;
+}
+
 #board {
     display: grid;
     grid-template-columns: repeat(8, 50px);
@@ -29,6 +40,32 @@
 
 .dark {
     background-color: #b58863;
+}
+
+.labels {
+    display: flex;
+    justify-content: space-around;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#file-labels {
+    width: 400px;
+    margin-left: 25px;
+}
+
+#rank-labels {
+    flex-direction: column;
+    width: 25px;
+    height: 400px;
+}
+
+#rank-labels div, #file-labels div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 25px;
+    height: 50px;
 }
 
 #controls {
