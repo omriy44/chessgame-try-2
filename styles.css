@@ -10,6 +10,8 @@
     grid-template-columns: repeat(8, 50px);
     grid-template-rows: repeat(8, 50px);
     border: 2px solid #333;
+    width: 400px;
+    height: 400px;
 }
 
 .square {
@@ -19,7 +21,6 @@
     justify-content: center;
     align-items: center;
     font-size: 36px;
-    cursor: pointer;
 }
 
 .light {
