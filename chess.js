@@ -7,14 +7,6 @@ const PIECES = {
     'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
 };
 
-function debug(message) {
-    console.log(message);
-    const debugElement = document.getElementById('debug');
-    if (debugElement) {
-        debugElement.innerHTML += message + '<br>';
-    }
-}
-
 function initializeBoard() {
     board = [
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -26,28 +18,13 @@ function initializeBoard() {
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
-    debug("Board initialized");
 }
 
 function createBoardDOM() {
-    debug("Creating board DOM");
     const boardElement = document.getElementById('board');
-    if (!boardElement) {
-        debug("Board element not found in createBoardDOM");
-        return;
-    }
     boardElement.innerHTML = '';
 
-    // Add top coordinates
-    boardElement.appendChild(createCoordinate(''));
     for (let i = 0; i < BOARD_SIZE; i++) {
-        boardElement.appendChild(createCoordinate(String.fromCharCode(97 + i)));
-    }
-
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        // Add left coordinates
-        boardElement.appendChild(createCoordinate(8 - i));
-
         for (let j = 0; j < BOARD_SIZE; j++) {
             const square = document.createElement('div');
             square.id = `${String.fromCharCode(97 + j)}${8 - i}`;
@@ -58,38 +35,26 @@ function createBoardDOM() {
             boardElement.appendChild(square);
         }
     }
-    debug("Board DOM created");
-}
-
-function createCoordinate(text) {
-    const coordinate = document.createElement('div');
-    coordinate.classList.add('coordinate');
-    coordinate.textContent = text;
-    return coordinate;
 }
 
 function updateBoard() {
-    debug("Updating board...");
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
             const square = document.getElementById(squareId);
-            if (square) {
-                square.innerHTML = '';
-                const piece = board[i][j];
-                if (piece !== ' ') {
-                    const pieceElement = document.createElement('div');
-                    pieceElement.classList.add('piece');
-                    pieceElement.textContent = PIECES[piece];
-                    pieceElement.draggable = piece === piece.toUpperCase();
-                    pieceElement.addEventListener('dragstart', drag);
-                    square.appendChild(pieceElement);
-                }
+            square.innerHTML = '';
+            const piece = board[i][j];
+            if (piece !== ' ') {
+                const pieceElement = document.createElement('div');
+                pieceElement.classList.add('piece');
+                pieceElement.textContent = PIECES[piece];
+                pieceElement.draggable = piece === piece.toUpperCase();
+                pieceElement.addEventListener('dragstart', drag);
+                square.appendChild(pieceElement);
             }
         }
     }
     document.getElementById('turn').textContent = isPlayerTurn ? "Your turn" : "Computer's turn";
-    debug("Board updated");
 }
 
 function drag(event) {
@@ -118,7 +83,6 @@ function drop(event) {
         updateBoard();
         setTimeout(computerMove, 500);
     } else {
-        debug("Invalid move");
         alert("Invalid move. Please try again.");
     }
 }
@@ -149,7 +113,7 @@ function makeMove(move) {
 }
 
 function computerMove() {
-    const depth = 3; // Adjust this for different difficulty levels
+    const depth = 3;
     const bestMove = findBestMove(depth);
     if (bestMove) {
         makeMove(bestMove);
@@ -166,9 +130,9 @@ function findBestMove(depth) {
     const moves = getAllPossibleMoves(false);
     
     for (const move of moves) {
-        makeMove(move);
+        const capturedPiece = makeMove(move);
         const score = minimax(depth - 1, false, -Infinity, Infinity);
-        undoMove(move);
+        undoMove(move, capturedPiece);
         
         if (score > bestScore) {
             bestScore = score;
@@ -189,9 +153,9 @@ function minimax(depth, isMaximizingPlayer, alpha, beta) {
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
         for (const move of moves) {
-            makeMove(move);
+            const capturedPiece = makeMove(move);
             const eval = minimax(depth - 1, false, alpha, beta);
-            undoMove(move);
+            undoMove(move, capturedPiece);
             maxEval = Math.max(maxEval, eval);
             alpha = Math.max(alpha, eval);
             if (beta <= alpha) break;
@@ -200,9 +164,9 @@ function minimax(depth, isMaximizingPlayer, alpha, beta) {
     } else {
         let minEval = Infinity;
         for (const move of moves) {
-            makeMove(move);
+            const capturedPiece = makeMove(move);
             const eval = minimax(depth - 1, true, alpha, beta);
-            undoMove(move);
+            undoMove(move, capturedPiece);
             minEval = Math.min(minEval, eval);
             beta = Math.min(beta, eval);
             if (beta <= alpha) break;
@@ -229,13 +193,13 @@ function evaluateBoard() {
     return score;
 }
 
-function undoMove(move) {
+function undoMove(move, capturedPiece) {
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
     board[fromRank][fromFile] = board[toRank][toFile];
-    board[toRank][toFile] = ' ';
+    board[toRank][toFile] = capturedPiece;
 }
 
 function getAllPossibleMoves(isWhite) {
@@ -261,9 +225,7 @@ function getAllPossibleMoves(isWhite) {
 }
 
 window.onload = function() {
-    debug("Window loaded");
     createBoardDOM();
     initializeBoard();
     updateBoard();
-    debug("Initialization complete");
 };
