@@ -140,7 +140,7 @@ function isValidMove(move, isPlayerMove) {
 
     // Check if the piece belongs to the current player
     const isPieceWhite = piece === piece.toUpperCase();
-    if (piece === ' ' || isPieceWhite !== isPlayerMove) {
+    if (piece === ' ' || isPieceWhite === isPlayerMove) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
@@ -149,20 +149,42 @@ function isValidMove(move, isPlayerMove) {
     console.log(`Target piece: ${targetPiece}`);
 
     // Check if the target square is empty or contains an opponent's piece
-    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) === isPieceWhite) {
+    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) !== isPieceWhite) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
 
-    // For simplicity, we'll allow any move that's not to the same square
-    // You can add more specific move validation for each piece type here
-    if (from === to) {
-        console.log(`Invalid move: Cannot move to the same square`);
-        return false;
+    // Piece-specific move validation
+    const pieceType = piece.toLowerCase();
+    const rankDiff = Math.abs(toRank - fromRank);
+    const fileDiff = Math.abs(toFile - fromFile);
+
+    switch (pieceType) {
+        case 'p': // Pawn
+            if (isPieceWhite) {
+                if (fromRank === 6 && toRank === 4 && fromFile === toFile && targetPiece === ' ') return true; // Initial two-square move
+                if (toRank === fromRank - 1 && fromFile === toFile && targetPiece === ' ') return true; // Regular move
+                if (toRank === fromRank - 1 && Math.abs(toFile - fromFile) === 1 && targetPiece !== ' ') return true; // Capture
+            } else {
+                if (fromRank === 1 && toRank === 3 && fromFile === toFile && targetPiece === ' ') return true; // Initial two-square move
+                if (toRank === fromRank + 1 && fromFile === toFile && targetPiece === ' ') return true; // Regular move
+                if (toRank === fromRank + 1 && Math.abs(toFile - fromFile) === 1 && targetPiece !== ' ') return true; // Capture
+            }
+            break;
+        case 'r': // Rook
+            return (rankDiff === 0 || fileDiff === 0) && isPathClear(fromRank, fromFile, toRank, toFile);
+        case 'n': // Knight
+            return (rankDiff === 2 && fileDiff === 1) || (rankDiff === 1 && fileDiff === 2);
+        case 'b': // Bishop
+            return rankDiff === fileDiff && isPathClear(fromRank, fromFile, toRank, toFile);
+        case 'q': // Queen
+            return (rankDiff === 0 || fileDiff === 0 || rankDiff === fileDiff) && isPathClear(fromRank, fromFile, toRank, toFile);
+        case 'k': // King
+            return rankDiff <= 1 && fileDiff <= 1;
     }
 
-    console.log(`Move ${move} is valid`);
-    return true;
+    console.log(`Invalid move for ${pieceType}`);
+    return false;
 }
 
 function makeMove(move) {
@@ -336,6 +358,22 @@ function checkBoardIntegrity() {
         }
     }
     console.log("Board integrity check passed");
+    return true;
+}
+
+function isPathClear(fromRank, fromFile, toRank, toFile) {
+    const rankStep = Math.sign(toRank - fromRank);
+    const fileStep = Math.sign(toFile - fromFile);
+    let currentRank = fromRank + rankStep;
+    let currentFile = fromFile + fileStep;
+
+    while (currentRank !== toRank || currentFile !== toFile) {
+        if (board[currentRank][currentFile] !== ' ') {
+            return false;
+        }
+        currentRank += rankStep;
+        currentFile += fileStep;
+    }
     return true;
 }
 
