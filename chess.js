@@ -26,28 +26,12 @@ function initializeBoard() {
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
-    debug("Board initialized");
 }
 
 function createBoardDOM() {
-    debug("Creating board DOM");
     const boardElement = document.getElementById('board');
-    if (!boardElement) {
-        debug("Board element not found in createBoardDOM");
-        return;
-    }
     boardElement.innerHTML = '';
-
-    // Add top coordinates
-    boardElement.appendChild(createCoordinate(''));
     for (let i = 0; i < BOARD_SIZE; i++) {
-        boardElement.appendChild(createCoordinate(String.fromCharCode(97 + i)));
-    }
-
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        // Add left coordinates
-        boardElement.appendChild(createCoordinate(8 - i));
-
         for (let j = 0; j < BOARD_SIZE; j++) {
             const square = document.createElement('div');
             square.id = `${String.fromCharCode(97 + j)}${8 - i}`;
@@ -58,48 +42,36 @@ function createBoardDOM() {
             boardElement.appendChild(square);
         }
     }
-    debug("Board DOM created");
-}
-
-function createCoordinate(text) {
-    const coordinate = document.createElement('div');
-    coordinate.classList.add('coordinate');
-    coordinate.textContent = text;
-    return coordinate;
 }
 
 function updateBoard() {
-    debug("Updating board...");
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
             const square = document.getElementById(squareId);
-            if (square) {
-                square.innerHTML = '';
-                const piece = board[i][j];
-                if (piece !== ' ') {
-                    const pieceElement = document.createElement('div');
-                    pieceElement.classList.add('piece');
-                    pieceElement.textContent = PIECES[piece];
-                    pieceElement.draggable = true;
-                    pieceElement.addEventListener('dragstart', drag);
-                    square.appendChild(pieceElement);
-                }
+            square.innerHTML = '';
+            const piece = board[i][j];
+            if (piece !== ' ') {
+                const pieceElement = document.createElement('div');
+                pieceElement.classList.add('piece');
+                pieceElement.textContent = PIECES[piece];
+                pieceElement.draggable = true;
+                pieceElement.addEventListener('dragstart', drag);
+                square.appendChild(pieceElement);
             }
         }
     }
     document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
-    debug("Board updated");
 }
 
 function drag(event) {
-    const square = event.target.closest('.square');
-    const piece = board[8 - parseInt(square.id[1])][square.id.charCodeAt(0) - 97];
+    const square = event.target.parentNode;
+    const [file, rank] = [square.id.charCodeAt(0) - 97, 8 - parseInt(square.id[1])];
+    const piece = board[rank][file];
     const isWhitePiece = piece === piece.toUpperCase();
     
     if (isWhitePiece !== isWhiteTurn) {
         event.preventDefault();
-        alert("It's not your turn!");
         return false;
     }
     event.dataTransfer.setData("text", square.id);
@@ -120,7 +92,6 @@ function drop(event) {
         isWhiteTurn = !isWhiteTurn;
         updateBoard();
     } else {
-        debug("Invalid move");
         alert("Invalid move. Please try again.");
     }
 }
@@ -139,87 +110,9 @@ function isValidMove(move) {
     const targetPiece = board[toRank][toFile];
     if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) return false;
 
-    // Piece-specific move validation
-    switch (piece.toLowerCase()) {
-        case 'p': return isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece);
-        case 'r': return isValidRookMove(fromFile, fromRank, toFile, toRank);
-        case 'n': return isValidKnightMove(fromFile, fromRank, toFile, toRank);
-        case 'b': return isValidBishopMove(fromFile, fromRank, toFile, toRank);
-        case 'q': return isValidQueenMove(fromFile, fromRank, toFile, toRank);
-        case 'k': return isValidKingMove(fromFile, fromRank, toFile, toRank);
-        default: return false;
-    }
-}
-
-function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
-    const direction = isWhite ? -1 : 1;
-    const startRank = isWhite ? 6 : 1;
-
-    // Move forward one square
-    if (fromFile === toFile && toRank === fromRank + direction && board[toRank][toFile] === ' ') {
-        return true;
-    }
-
-    // Move forward two squares from starting position
-    if (fromFile === toFile && fromRank === startRank && toRank === fromRank + 2 * direction &&
-        board[fromRank + direction][fromFile] === ' ' && board[toRank][toFile] === ' ') {
-        return true;
-    }
-
-    // Capture diagonally
-    if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && 
-        board[toRank][toFile] !== ' ' && 
-        isWhite !== (board[toRank][toFile] === board[toRank][toFile].toUpperCase())) {
-        return true;
-    }
-
-    return false;
-}
-
-function isValidRookMove(fromFile, fromRank, toFile, toRank) {
-    if (fromFile !== toFile && fromRank !== toRank) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidKnightMove(fromFile, fromRank, toFile, toRank) {
-    const fileDiff = Math.abs(fromFile - toFile);
-    const rankDiff = Math.abs(fromRank - toRank);
-    return (fileDiff === 1 && rankDiff === 2) || (fileDiff === 2 && rankDiff === 1);
-}
-
-function isValidBishopMove(fromFile, fromRank, toFile, toRank) {
-    if (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank)) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidQueenMove(fromFile, fromRank, toFile, toRank) {
-    if ((fromFile !== toFile && fromRank !== toRank) && 
-        (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank))) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidKingMove(fromFile, fromRank, toFile, toRank) {
-    const fileDiff = Math.abs(fromFile - toFile);
-    const rankDiff = Math.abs(fromRank - toRank);
-    return fileDiff <= 1 && rankDiff <= 1;
-}
-
-function isPathClear(fromFile, fromRank, toFile, toRank) {
-    const fileStep = Math.sign(toFile - fromFile);
-    const rankStep = Math.sign(toRank - fromRank);
-
-    let currentFile = fromFile + fileStep;
-    let currentRank = fromRank + rankStep;
-
-    while (currentFile !== toFile || currentRank !== toRank) {
-        if (board[currentRank][currentFile] !== ' ') {
-            return false;
-        }
-        currentFile += fileStep;
-        currentRank += rankStep;
-    }
-
-    return true;
+    // Add piece-specific move validation here
+    // For now, we'll allow any move that's not to the same square
+    return from !== to;
 }
 
 function makeMove(move) {
@@ -229,13 +122,10 @@ function makeMove(move) {
 
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
-    debug(`Move made: ${move}`);
 }
 
 window.onload = function() {
-    debug("Window loaded");
     createBoardDOM();
     initializeBoard();
     updateBoard();
-    debug("Initialization complete");
 };
