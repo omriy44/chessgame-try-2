@@ -253,12 +253,23 @@ function computerMove() {
         return;
     }
 
-    // Choose a random move
-    const randomIndex = Math.floor(Math.random() * possibleMoves.length);
-    const chosenMove = possibleMoves[randomIndex];
+    let bestMove = null;
+    let bestScore = -Infinity;
 
-    console.log(`Computer chooses move: ${chosenMove}`);
-    makeMove(chosenMove);
+    for (const move of possibleMoves) {
+        const oldBoard = JSON.parse(JSON.stringify(board));
+        makeMove(move);
+        const score = minimax(2, true); // Adjust the depth as needed
+        board = oldBoard;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+
+    console.log(`Computer chooses move: ${bestMove}`);
+    makeMove(bestMove);
     isPlayerTurn = true;
     console.log("Switching turn to player. isPlayerTurn is now:", isPlayerTurn);
     updateBoard();
@@ -424,6 +435,49 @@ function isPathClear(fromRank, fromFile, toRank, toFile) {
         currentFile += fileStep;
     }
     return true;
+}
+
+function evaluateBoard() {
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j];
+            if (piece !== ' ') {
+                score += PIECE_VALUES[piece];
+            }
+        }
+    }
+    return score;
+}
+
+function minimax(depth, isMaximizingPlayer) {
+    if (depth === 0) {
+        return evaluateBoard();
+    }
+
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        const moves = getAllPossibleMoves(false);
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimax(depth - 1, false);
+            board = oldBoard;
+            maxEval = Math.max(maxEval, eval);
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        const moves = getAllPossibleMoves(true);
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimax(depth - 1, true);
+            board = oldBoard;
+            minEval = Math.min(minEval, eval);
+        }
+        return minEval;
+    }
 }
 
 window.onload = function() {
