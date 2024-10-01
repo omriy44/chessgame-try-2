@@ -1,3 +1,11 @@
+function debug(message) {
+    console.log(message);
+    const debugElement = document.getElementById('debug');
+    if (debugElement) {
+        debugElement.innerHTML += message + '<br>';
+    }
+}
+
 const BOARD_SIZE = 8;
 let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
 let isWhiteTurn = true;
@@ -22,7 +30,12 @@ function initializeBoard() {
 }
 
 function createBoardDOM() {
+    debug("Creating board DOM");
     const boardElement = document.getElementById('board');
+    if (!boardElement) {
+        debug("Board element not found in createBoardDOM");
+        return;
+    }
     boardElement.innerHTML = '';
 
     // Add top coordinates
@@ -45,7 +58,7 @@ function createBoardDOM() {
             boardElement.appendChild(square);
         }
     }
-    console.log("Board DOM created");
+    debug("Board DOM created");
 }
 
 function createCoordinate(text) {
@@ -329,7 +342,15 @@ function makeMove(move) {
 }
 
 window.onload = function() {
+    debug("Window loaded");
+    const boardElement = document.getElementById('board');
+    if (boardElement) {
+        debug("Board element found");
+    } else {
+        debug("Board element not found");
+    }
     createBoardDOM();
     initializeBoard();
     updateBoard();
+    debug("Initialization complete");
 };
