@@ -134,6 +134,12 @@ function makeMove(move) {
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+    if (fromRank < 0 || fromRank >= BOARD_SIZE || fromFile < 0 || fromFile >= BOARD_SIZE ||
+        toRank < 0 || toRank >= BOARD_SIZE || toFile < 0 || toFile >= BOARD_SIZE) {
+        console.error(`Invalid move: ${move}`);
+        return;
+    }
+
     console.log(`Moving piece from [${fromRank}, ${fromFile}] to [${toRank}, ${toFile}]`);
     console.log(`Piece being moved: ${board[fromRank][fromFile]}`);
 
@@ -149,6 +155,12 @@ function undoMove(move) {
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+    if (fromRank < 0 || fromRank >= BOARD_SIZE || fromFile < 0 || fromFile >= BOARD_SIZE ||
+        toRank < 0 || toRank >= BOARD_SIZE || toFile < 0 || toFile >= BOARD_SIZE) {
+        console.error(`Invalid move to undo: ${move}`);
+        return;
+    }
+
     console.log(`Moving piece from [${toRank}, ${toFile}] back to [${fromRank}, ${fromFile}]`);
     console.log(`Piece being moved back: ${board[toRank][toFile]}`);
 
@@ -160,6 +172,12 @@ function undoMove(move) {
 
 function computerMove() {
     console.log("Starting computer move");
+    if (!checkBoardIntegrity()) {
+        console.error("Board integrity check failed. Reinitializing the board.");
+        initializeBoard();
+        updateBoard();
+        return;
+    }
     console.log("Current board state:", JSON.stringify(board));
 
     if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
@@ -230,12 +248,19 @@ function findBestMove(depth) {
 
 function minimax(depth, alpha, beta, isMaximizingPlayer) {
     console.log(`Minimax called with depth: ${depth}, isMaximizingPlayer: ${isMaximizingPlayer}`);
+    console.log("Current board state:", JSON.stringify(board));
+    
     if (depth === 0) {
         return evaluateBoard();
     }
 
     const moves = getAllPossibleMoves(isMaximizingPlayer);
     console.log(`Possible moves at depth ${depth}:`, moves);
+
+    if (moves.length === 0) {
+        console.log("No moves available, returning current evaluation");
+        return evaluateBoard();
+    }
 
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
@@ -277,13 +302,17 @@ function evaluateBoard() {
             const piece = board[i][j];
             console.log(`Evaluating piece at [${i}, ${j}]: ${piece}`);
             if (piece && piece !== ' ') {
-                const pieceValue = PIECE_VALUES[piece] || 0;
-                console.log(`Piece value: ${pieceValue}`);
-                score += pieceValue;
-                // Add positional bonuses
-                const posBonus = getPositionalBonus(piece, i, j);
-                console.log(`Positional bonus: ${posBonus}`);
-                score += posBonus;
+                if (PIECE_VALUES[piece] === undefined) {
+                    console.error(`Unknown piece type: ${piece} at [${i}, ${j}]`);
+                    continue;
+                }
+                score += PIECE_VALUES[piece];
+                try {
+                    const posBonus = getPositionalBonus(piece, i, j);
+                    score += posBonus;
+                } catch (error) {
+                    console.error(`Error getting positional bonus for piece ${piece} at [${i}, ${j}]:`, error);
+                }
             }
         }
     }
@@ -293,8 +322,12 @@ function evaluateBoard() {
 
 function getPositionalBonus(piece, rank, file) {
     console.log(`Getting positional bonus for piece: ${piece} at rank: ${rank}, file: ${file}`);
-    if (!piece || piece === ' ') {
-        console.warn(`No piece at rank ${rank}, file ${file}`);
+    if (piece === undefined || piece === null) {
+        console.error(`Invalid piece at rank ${rank}, file ${file}`);
+        return 0;
+    }
+    if (typeof piece !== 'string' || piece.length !== 1) {
+        console.error(`Unexpected piece format: ${piece} at rank ${rank}, file ${file}`);
         return 0;
     }
 
@@ -415,6 +448,28 @@ function logBoard() {
 
 function logMove(move, message) {
     console.log(`${message}: ${move}`);
+}
+
+function checkBoardIntegrity() {
+    console.log("Checking board integrity");
+    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
+        console.error("Invalid board structure");
+        return false;
+    }
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
+            console.error(`Invalid row at index ${i}`);
+            return false;
+        }
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (typeof board[i][j] !== 'string') {
+                console.error(`Invalid piece at [${i}, ${j}]: ${board[i][j]}`);
+                return false;
+            }
+        }
+    }
+    console.log("Board integrity check passed");
+    return true;
 }
 
 window.onload = function() {
