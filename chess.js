@@ -101,16 +101,14 @@ function drop(event) {
     console.log(`Player attempting move: ${move}`);
     console.log("Board state before move:", JSON.stringify(board));
 
-    if (isValidMove(move, true)) {  // Pass true for player's turn
+    if (isValidMove(move, true)) {
         makeMove(move);
         isPlayerTurn = false;
         updateBoard();
         console.log("Board state after player move:", JSON.stringify(board));
         
-        // Schedule the computer's move after a short delay
-        setTimeout(() => {
-            computerMove();
-        }, 500);
+        // Call computerMove directly after the player's move
+        computerMove();
     } else {
         alert("Invalid move. Please try again.");
     }
@@ -201,7 +199,7 @@ function computerMove() {
     console.log("Starting computer move");
     console.log("Current board state:", JSON.stringify(board));
 
-    if (!isPlayerTurn) {
+    if (isPlayerTurn) {
         console.log("It's not the computer's turn yet.");
         return;
     }
