@@ -28,7 +28,7 @@ function initializeBoard() {
     ];
     isPlayerTurn = true;
     console.log("Board initialized:", JSON.stringify(board));
-    console.log("It's the player's turn to move.");
+    console.log("It's the player's turn to move. isPlayerTurn is:", isPlayerTurn);
 }
 
 function createBoardDOM() {
@@ -89,6 +89,7 @@ function allowDrop(event) {
 
 function drop(event) {
     event.preventDefault();
+    console.log(`Current turn: ${isPlayerTurn ? 'Player' : 'Computer'}`);
     if (!isPlayerTurn) {
         console.log("It's not the player's turn yet.");
         return;
@@ -107,14 +108,14 @@ function drop(event) {
         
         // Update isPlayerTurn before calling computerMove
         isPlayerTurn = false;
-        console.log("Switching turn to computer");
+        console.log("Switching turn to computer. isPlayerTurn is now:", isPlayerTurn);
+        
+        updateBoard();
         
         // Call computerMove after a short delay
         setTimeout(() => {
             computerMove();
         }, 100);
-        
-        updateBoard();
     } else {
         alert("Invalid move. Please try again.");
     }
@@ -207,7 +208,7 @@ function computerMove() {
     console.log(`Is player turn: ${isPlayerTurn}`);
 
     if (isPlayerTurn) {
-        console.log("It's not the computer's turn yet.");
+        console.error("It's not the computer's turn yet. This shouldn't happen.");
         return;
     }
 
@@ -231,10 +232,10 @@ function computerMove() {
     console.log(`Computer chooses move: ${chosenMove}`);
     makeMove(chosenMove);
     isPlayerTurn = true;
+    console.log("Switching turn to player. isPlayerTurn is now:", isPlayerTurn);
     updateBoard();
 
     console.log("Board after computer move:", JSON.stringify(board));
-    console.log("Switching turn to player");
     console.log("Waiting for player's move...");
 }
 
