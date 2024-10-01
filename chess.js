@@ -1,5 +1,5 @@
 const BOARD_SIZE = 8;
-let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
+let board = [];
 let isPlayerTurn = true;
 
 const PIECES = {
@@ -23,6 +23,7 @@ function initializeBoard() {
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
+    console.log("Board initialized:", board);
 }
 
 function createBoardDOM() {
@@ -202,6 +203,13 @@ function makeMove(move) {
 }
 
 function computerMove() {
+    if (!isBoardValid()) {
+        console.error("Invalid board state. Reinitializing the board.");
+        initializeBoard();
+        updateBoard();
+        return;
+    }
+    
     const depth = 3;
     const bestMove = findBestMove(depth);
     if (bestMove) {
@@ -332,10 +340,18 @@ function undoMove(move, capturedPiece) {
 
 function getAllPossibleMoves(isWhite) {
     const moves = [];
+    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
+        console.error("Invalid board state");
+        return moves;
+    }
     for (let i = 0; i < BOARD_SIZE; i++) {
+        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
+            console.error(`Invalid board row at index ${i}`);
+            continue;
+        }
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhite) {
+            if (piece && piece !== ' ' && (piece.toUpperCase() === piece) === isWhite) {
                 const from = `${String.fromCharCode(97 + j)}${8 - i}`;
                 for (let x = 0; x < BOARD_SIZE; x++) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
@@ -379,6 +395,21 @@ function isInCheck(isWhiteKing) {
         }
     }
     return false;
+}
+
+// Add this function to check the board state
+function isBoardValid() {
+    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
+        console.error("Invalid board structure");
+        return false;
+    }
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
+            console.error(`Invalid board row at index ${i}`);
+            return false;
+        }
+    }
+    return true;
 }
 
 window.onload = function() {
