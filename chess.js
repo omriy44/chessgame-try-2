@@ -96,7 +96,6 @@ function isValidMove(move, checkForCheck = true) {
         return false;
     }
 
-    // Piece-specific movement rules
     let validMove;
     switch (piece.toLowerCase()) {
         case 'p': validMove = isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece); break;
@@ -201,16 +200,6 @@ function isPathClear(fromFile, fromRank, toFile, toRank) {
     return true;
 }
 
-function makeMove(move) {
-    console.log(`Making move: ${move}`);
-    const [from, to] = move.split('-');
-    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
-    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
-
-    board[toRank][toFile] = board[fromRank][fromFile];
-    board[fromRank][fromFile] = ' ';
-}
-
 function findKing(isWhite) {
     const kingPiece = isWhite ? 'K' : 'k';
     for (let rank = 0; rank < BOARD_SIZE; rank++) {
@@ -231,8 +220,27 @@ function isInCheck(isWhiteKing) {
         for (let file = 0; file < BOARD_SIZE; file++) {
             const piece = board[rank][file];
             if (piece !== ' ' && isWhiteKing !== (piece === piece.toUpperCase())) {
-                if (isValidMove(`${String.fromCharCode(97 + file)}${8 - rank}-${String.fromCharCode(97 + king.file)}${8 - king.rank}`)) {
+                if (isValidMove(`${String.fromCharCode(97 + file)}${8 - rank}-${String.fromCharCode(97 + king.file)}${8 - king.rank}`, false)) {
                     return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+function hasLegalMoves() {
+    for (let fromRank = 0; fromRank < BOARD_SIZE; fromRank++) {
+        for (let fromFile = 0; fromFile < BOARD_SIZE; fromFile++) {
+            const piece = board[fromRank][fromFile];
+            if (piece !== ' ' && (isWhiteTurn === (piece === piece.toUpperCase()))) {
+                for (let toRank = 0; toRank < BOARD_SIZE; toRank++) {
+                    for (let toFile = 0; toFile < BOARD_SIZE; toFile++) {
+                        const move = `${String.fromCharCode(97 + fromFile)}${8 - fromRank}-${String.fromCharCode(97 + toFile)}${8 - toRank}`;
+                        if (isValidMove(move)) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -251,12 +259,20 @@ function highlightCheck() {
     }
 }
 
+function makeMove(move) {
+    console.log(`Making move: ${move}`);
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    board[toRank][toFile] = board[fromRank][fromFile];
+    board[fromRank][fromFile] = ' ';
+}
+
 window.handleMove = function() {
     const moveInput = document.getElementById('move');
     const move = moveInput.value.toLowerCase();
     console.log(`Attempting move: ${move}`);
-
-    const currentPlayerInCheck = isInCheck(isWhiteTurn);
 
     if (isValidMove(move)) {
         makeMove(move);
@@ -269,7 +285,7 @@ window.handleMove = function() {
             alert(isWhiteTurn ? "Black is in check!" : "White is in check!");
         }
     } else {
-        if (currentPlayerInCheck) {
+        if (isInCheck(isWhiteTurn)) {
             alert('Illegal move. You must move out of check.');
         } else {
             alert('Illegal move. Try again.');
