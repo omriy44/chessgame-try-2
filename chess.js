@@ -44,13 +44,21 @@ function updateBoard() {
             const square = document.getElementById(squareId);
             if (square) {
                 square.textContent = PIECES[board[i][j]] || '';
-                highlightCheck();
+                square.style.backgroundColor = ''; // Reset background color
             }
         }
     }
     document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
-    console.log("Board updated");
+    
     highlightCheck();
+
+    if (isInCheck(isWhiteTurn) && !hasLegalMoves()) {
+        alert(isWhiteTurn ? "Checkmate! Black wins!" : "Checkmate! White wins!");
+    } else if (!isInCheck(isWhiteTurn) && !hasLegalMoves()) {
+        alert("Stalemate! The game is a draw.");
+    }
+
+    console.log("Board updated");
 }
 
 function isValidMove(move, checkForCheck = true) {
@@ -247,6 +255,9 @@ window.handleMove = function() {
     const moveInput = document.getElementById('move');
     const move = moveInput.value.toLowerCase();
     console.log(`Attempting move: ${move}`);
+
+    const currentPlayerInCheck = isInCheck(isWhiteTurn);
+
     if (isValidMove(move)) {
         makeMove(move);
         isWhiteTurn = !isWhiteTurn;
@@ -258,7 +269,11 @@ window.handleMove = function() {
             alert(isWhiteTurn ? "Black is in check!" : "White is in check!");
         }
     } else {
-        alert('Illegal move. Try again.');
+        if (currentPlayerInCheck) {
+            alert('Illegal move. You must move out of check.');
+        } else {
+            alert('Illegal move. Try again.');
+        }
         moveInput.value = '';
         console.log("Illegal move attempted");
     }
