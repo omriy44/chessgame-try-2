@@ -309,9 +309,6 @@ let isTimeUp = false;
 function computerMove() {
     console.log("Starting computer move");
     
-    const startTime = Date.now();
-    const timeLimit = 5000; // 5 seconds time limit
-
     const possibleMoves = getAllPossibleMoves(false);
     
     if (possibleMoves.length === 0) {
@@ -324,37 +321,53 @@ function computerMove() {
         return;
     }
 
-    let bestMove = null;
-    let bestScore = -Infinity;
+    // First, check for any capturing moves
+    let capturingMoves = possibleMoves.filter(move => {
+        const [from, to] = move.split('-');
+        const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+        return board[toRank][toFile] !== ' ';
+    });
 
-    for (const move of possibleMoves) {
-        const oldBoard = JSON.parse(JSON.stringify(board));
-        makeMove(move);
-        const score = evaluatePosition(false);
-        board = oldBoard;
+    if (capturingMoves.length > 0) {
+        // If there are capturing moves, choose the one that captures the highest value piece
+        let bestMove = capturingMoves[0];
+        let bestValue = -Infinity;
 
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
+        for (const move of capturingMoves) {
+            const [from, to] = move.split('-');
+            const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+            const capturedPiece = board[toRank][toFile].toLowerCase();
+            const value = getPieceValue(capturedPiece);
+
+            if (value > bestValue) {
+                bestValue = value;
+                bestMove = move;
+            }
         }
 
-        if (Date.now() - startTime > timeLimit) {
-            console.log("Time limit reached");
-            break;
-        }
+        console.log(`Computer chooses capturing move: ${bestMove}`);
+        makeMove(bestMove);
+    } else {
+        // If no capturing moves, choose a random move
+        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        console.log(`Computer chooses random move: ${randomMove}`);
+        makeMove(randomMove);
     }
 
-    if (!bestMove) {
-        bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        console.log("Choosing random move");
-    }
-
-    console.log(`Computer chooses move: ${bestMove} with score ${bestScore}`);
-    makeMove(bestMove);
     isPlayerTurn = true;
     updateBoard();
+}
 
-    console.log(`Move calculation took ${Date.now() - startTime} ms`);
+function getPieceValue(piece) {
+    const values = {
+        'p': 1,
+        'n': 3,
+        'b': 3,
+        'r': 5,
+        'q': 9,
+        'k': 0
+    };
+    return values[piece] || 0;
 }
 
 function evaluatePosition(isPlayerTurn) {
