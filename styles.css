@@ -22,21 +22,23 @@ body {
 
 #board {
     display: grid;
-    grid-template-columns: repeat(8, 50px);
-    grid-template-rows: repeat(8, 50px);
-    gap: 1px;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    width: 480px;
+    height: 480px;
     border: 2px solid #333;
     grid-column: 2;
     grid-row: 1;
 }
 
 .square {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 30px;
+    font-size: 40px;
+    user-select: none;
 }
 
 .light {
@@ -45,6 +47,18 @@ body {
 
 .dark {
     background-color: #b58863;
+}
+
+.highlight {
+    background-color: yellow;
+}
+
+.piece {
+    cursor: grab;
+}
+
+.piece:active {
+    cursor: grabbing;
 }
 
 #file-labels, #rank-labels {
