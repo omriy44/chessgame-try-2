@@ -1,7 +1,6 @@
 const BOARD_SIZE = 8;
 let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
 let isWhiteTurn = true;
-let isCurrentPlayerInCheck = false;
 
 const PIECES = {
     'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
@@ -45,10 +44,6 @@ function updateBoard() {
             const square = document.getElementById(squareId);
             if (square) {
                 square.textContent = PIECES[board[i][j]] || '';
-                // Only reset the background if it's not red (indicating check)
-                if (square.style.backgroundColor !== 'red') {
-                    square.style.backgroundColor = '';
-                }
             }
         }
     }
@@ -56,8 +51,8 @@ function updateBoard() {
     console.log("Board updated");
 }
 
-function isValidMove(move, mustResolveCheck = false) {
-    console.log(`Checking move: ${move}, mustResolveCheck: ${mustResolveCheck}`);
+function isValidMove(move) {
+    console.log(`Checking move: ${move}`);
     const [from, to] = move.split('-');
     if (!from || !to || from.length !== 2 || to.length !== 2) {
         console.log("Invalid move format");
@@ -85,6 +80,7 @@ function isValidMove(move, mustResolveCheck = false) {
         return false;
     }
 
+    // For now, allow any move that meets the above criteria
     console.log("Move is valid");
     return true;
 }
