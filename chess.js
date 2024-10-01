@@ -44,9 +44,12 @@
                 const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
                 const square = document.getElementById(squareId);
                 if (square) {
-                    const piece = board[i][j];
-                    square.textContent = PIECES[piece] || '';
-                    console.log(`Square ${squareId}: ${piece} (${PIECES[piece] || 'empty'})`);
+                    square.textContent = PIECES[board[i][j]] || '';
+                    // Only reset the background if it's not red (indicating check)
+                    if (square.style.backgroundColor !== 'red') {
+                        square.style.backgroundColor = '';
+                    }
+                    console.log(`Square ${squareId}: ${board[i][j]} (${PIECES[board[i][j]] || 'empty'})`);
                 } else {
                     console.error(`Square element not found: ${squareId}`);
                 }
@@ -56,7 +59,7 @@
         console.log("Board update complete");
     }
 
-    function isValidMove(move) {
+    function isValidMove(move, mustResolveCheck = false) {
         console.log("Checking move:", move);
         const [from, to] = move.split('-');
         if (!from || !to || from.length !== 2 || to.length !== 2) {
@@ -99,11 +102,27 @@
             default: return false;
         }
 
-        if (validMove && doesMoveputPlayerInCheck(move, isWhitePiece)) {
-            return false;
+        if (validMove) {
+            // Make the move temporarily
+            const capturedPiece = board[toRank][toFile];
+            board[toRank][toFile] = board[fromRank][fromFile];
+            board[fromRank][fromFile] = ' ';
+
+            // Check if the player is still in check after the move
+            const stillInCheck = isInCheck(isWhitePiece);
+
+            // Undo the move
+            board[fromRank][fromFile] = board[toRank][toFile];
+            board[toRank][toFile] = capturedPiece;
+
+            if (mustResolveCheck && stillInCheck) {
+                return false;
+            }
+
+            return !stillInCheck;
         }
 
-        return validMove;
+        return false;
     }
 
     function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
@@ -249,22 +268,59 @@
         return inCheck;
     }
 
+    function highlightKingInCheck(isWhiteKing) {
+        const kingPiece = isWhiteKing ? 'K' : 'k';
+        for (let rank = 0; rank < BOARD_SIZE; rank++) {
+            for (let file = 0; file < BOARD_SIZE; file++) {
+                if (board[rank][file] === kingPiece) {
+                    const squareId = `${String.fromCharCode(97 + file)}${8 - rank}`;
+                    const square = document.getElementById(squareId);
+                    if (square) {
+                        square.style.backgroundColor = 'red';
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    function clearHighlights() {
+        for (let rank = 0; rank < BOARD_SIZE; rank++) {
+            for (let file = 0; file < BOARD_SIZE; file++) {
+                const squareId = `${String.fromCharCode(97 + file)}${8 - rank}`;
+                const square = document.getElementById(squareId);
+                if (square) {
+                    square.style.backgroundColor = '';
+                }
+            }
+        }
+    }
+
+    let isCurrentPlayerInCheck = false;
+
     window.handleMove = function() {
         const moveInput = document.getElementById('move');
         const move = moveInput.value.toLowerCase();
         console.log("Attempting move:", move);
-        if (isValidMove(move)) {
+        if (isValidMove(move, isCurrentPlayerInCheck)) {
             makeMove(move);
             isWhiteTurn = !isWhiteTurn;
+            clearHighlights();
             updateBoard();
             moveInput.value = '';
             console.log("Move made successfully");
             
-            if (isInCheck(isWhiteTurn)) {
+            isCurrentPlayerInCheck = isInCheck(isWhiteTurn);
+            if (isCurrentPlayerInCheck) {
+                highlightKingInCheck(isWhiteTurn);
                 alert(isWhiteTurn ? "White is in check!" : "Black is in check!");
             }
         } else {
-            alert('Illegal move. Try again.');
+            if (isCurrentPlayerInCheck) {
+                alert('Illegal move. You must move out of check.');
+            } else {
+                alert('Illegal move. Try again.');
+            }
             moveInput.value = '';
             console.log("Illegal move attempted");
         }
