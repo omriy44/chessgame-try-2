@@ -8,17 +8,15 @@ const PIECES = {
 };
 
 function initializeBoard() {
-    // Set up white pieces
     board[7] = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
     board[6] = Array(8).fill('P');
-
-    // Set up black pieces
     board[0] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
     board[1] = Array(8).fill('p');
 }
 
 function createBoardDOM() {
     const boardElement = document.getElementById('board');
+    boardElement.innerHTML = '';
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const square = document.createElement('div');
@@ -43,6 +41,36 @@ function updateBoard() {
     document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
 }
 
+function isValidMove(move) {
+    const [from, to] = move.split('-');
+    if (!from || !to || from.length !== 2 || to.length !== 2) return false;
+
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    if (fromFile < 0 || fromFile > 7 || fromRank < 0 || fromRank > 7 ||
+        toFile < 0 || toFile > 7 || toRank < 0 || toRank > 7) return false;
+
+    const piece = board[fromRank][fromFile];
+    if (piece === ' ') return false;
+
+    const isWhitePiece = piece === piece.toUpperCase();
+    if (isWhitePiece !== isWhiteTurn) return false;
+
+    // Add more specific piece movement rules here if needed
+
+    return true;
+}
+
+function makeMove(move) {
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    board[toRank][toFile] = board[fromRank][fromFile];
+    board[fromRank][fromFile] = ' ';
+}
+
 function handleMove() {
     const moveInput = document.getElementById('move');
     const move = moveInput.value.toLowerCase();
@@ -52,14 +80,13 @@ function handleMove() {
         updateBoard();
         moveInput.value = '';
     } else {
-        alert('Invalid move. Try again.');
+        alert('Invalid move. Please try again.');
     }
 }
-
-// Implement isValidMove and makeMove functions here
 
 window.onload = function() {
     createBoardDOM();
     initializeBoard();
     updateBoard();
 };
+
