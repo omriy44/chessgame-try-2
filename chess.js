@@ -34,10 +34,29 @@ function updateBoard() {
 }
 
 function isValidMove(move) {
-    // This is a simplified validation. A real chess game would need more complex logic.
     const parts = move.split('-');
     if (parts.length !== 2) return false;
-    return isValidSquare(parts[0]) && isValidSquare(parts[1]);
+    
+    const [from, to] = parts;
+    if (!isValidSquare(from) || !isValidSquare(to)) return false;
+    
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from.charAt(1))];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to.charAt(1))];
+    
+    const piece = board[fromRank][fromFile];
+    
+    // Check if the piece belongs to the current player
+    if (isWhiteTurn && piece.toLowerCase() === piece) return false;
+    if (!isWhiteTurn && piece.toUpperCase() === piece) return false;
+    
+    // Check if the destination square is empty or contains an opponent's piece
+    const destPiece = board[toRank][toFile];
+    if (isWhiteTurn && destPiece.toUpperCase() === destPiece && destPiece !== ' ') return false;
+    if (!isWhiteTurn && destPiece.toLowerCase() === destPiece && destPiece !== ' ') return false;
+    
+    // Add more specific piece movement rules here if needed
+    
+    return true;
 }
 
 function isValidSquare(square) {
@@ -48,11 +67,9 @@ function isValidSquare(square) {
 }
 
 function makeMove(move) {
-    const parts = move.split('-');
-    const fromFile = parts[0].charCodeAt(0) - 97;
-    const fromRank = 8 - parseInt(parts[0].charAt(1));
-    const toFile = parts[1].charCodeAt(0) - 97;
-    const toRank = 8 - parseInt(parts[1].charAt(1));
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from.charAt(1))];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to.charAt(1))];
 
     const piece = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
@@ -62,7 +79,7 @@ function makeMove(move) {
 function handleMove() {
     const moveInput = document.getElementById('move');
     if (moveInput) {
-        const move = moveInput.value;
+        const move = moveInput.value.toLowerCase();
         if (isValidMove(move)) {
             makeMove(move);
             isWhiteTurn = !isWhiteTurn;
