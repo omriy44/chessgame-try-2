@@ -7,13 +7,14 @@
 
 #board-container {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: row;
+    align-items: flex-start;
+    margin-bottom: 20px;
 }
 
-#board-with-ranks {
+#board-and-files {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 }
 
 #board {
@@ -50,26 +51,27 @@
 }
 
 #file-labels {
+    flex-direction: row;
     width: 400px;
-    margin-left: 25px;
+    height: 25px;
 }
 
 #rank-labels {
     flex-direction: column;
     width: 25px;
     height: 400px;
+    margin-right: 5px;
 }
 
 #rank-labels div, #file-labels div {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 25px;
+    width: 50px;
     height: 50px;
 }
 
 #controls {
-    margin-top: 20px;
     text-align: center;
 }
 
