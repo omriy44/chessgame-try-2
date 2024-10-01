@@ -8,42 +8,29 @@ const PIECES = {
 };
 
 function initializeBoard() {
-    // Initialize empty squares
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            board[i][j] = ' ';
-        }
-    }
-
     // Set up white pieces
-    board[7][0] = board[7][7] = 'R';
-    board[7][1] = board[7][6] = 'N';
-    board[7][2] = board[7][5] = 'B';
-    board[7][3] = 'Q';
-    board[7][4] = 'K';
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        board[6][i] = 'P';
-    }
+    board[7] = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+    board[6] = Array(8).fill('P');
 
     // Set up black pieces
-    board[0][0] = board[0][7] = 'r';
-    board[0][1] = board[0][6] = 'n';
-    board[0][2] = board[0][5] = 'b';
-    board[0][3] = 'q';
-    board[0][4] = 'k';
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        board[1][i] = 'p';
-    }
+    board[0] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+    board[1] = Array(8).fill('p');
 }
 
 function updateBoard() {
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
-            const square = document.getElementById(`${String.fromCharCode(97 + j)}${8 - i}`);
-            square.textContent = PIECES[board[i][j]] || '';
+            const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
+            const square = document.getElementById(squareId);
+            if (square) {
+                square.textContent = PIECES[board[i][j]] || '';
+            }
         }
     }
-    document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
+    const turnElement = document.getElementById('turn');
+    if (turnElement) {
+        turnElement.textContent = isWhiteTurn ? "White's turn" : "Black's turn";
+    }
 }
 
 function isValidMove(move) {
@@ -74,14 +61,16 @@ function makeMove(move) {
 
 function handleMove() {
     const moveInput = document.getElementById('move');
-    const move = moveInput.value;
-    if (isValidMove(move)) {
-        makeMove(move);
-        isWhiteTurn = !isWhiteTurn;
-        updateBoard();
-        moveInput.value = '';
-    } else {
-        alert('Invalid move. Try again.');
+    if (moveInput) {
+        const move = moveInput.value;
+        if (isValidMove(move)) {
+            makeMove(move);
+            isWhiteTurn = !isWhiteTurn;
+            updateBoard();
+            moveInput.value = '';
+        } else {
+            alert('Invalid move. Try again.');
+        }
     }
 }
 
