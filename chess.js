@@ -114,7 +114,9 @@ function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
     }
 
     // Capture diagonally
-    if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && board[toRank][toFile] !== ' ') {
+    if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && 
+        board[toRank][toFile] !== ' ' && 
+        isWhite !== (board[toRank][toFile] === board[toRank][toFile].toUpperCase())) {
         return true;
     }
 
@@ -138,7 +140,9 @@ function isValidBishopMove(fromFile, fromRank, toFile, toRank) {
 }
 
 function isValidQueenMove(fromFile, fromRank, toFile, toRank) {
-    return isValidRookMove(fromFile, fromRank, toFile, toRank) || isValidBishopMove(fromFile, fromRank, toFile, toRank);
+    if ((fromFile !== toFile && fromRank !== toRank) && 
+        (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank))) return false;
+    return isPathClear(fromFile, fromRank, toFile, toRank);
 }
 
 function isValidKingMove(fromFile, fromRank, toFile, toRank) {
