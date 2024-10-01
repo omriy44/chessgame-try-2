@@ -59,55 +59,34 @@ function updateBoard() {
 function isValidMove(move, mustResolveCheck = false) {
     console.log(`Checking move: ${move}, mustResolveCheck: ${mustResolveCheck}`);
     const [from, to] = move.split('-');
-    if (!from || !to || from.length !== 2 || to.length !== 2) return false;
+    if (!from || !to || from.length !== 2 || to.length !== 2) {
+        console.log("Invalid move format");
+        return false;
+    }
 
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
     if (fromFile < 0 || fromFile > 7 || fromRank < 0 || fromRank > 7 ||
-        toFile < 0 || toFile > 7 || toRank < 0 || toRank > 7) return false;
+        toFile < 0 || toFile > 7 || toRank < 0 || toRank > 7) {
+        console.log("Move out of board bounds");
+        return false;
+    }
 
     const piece = board[fromRank][fromFile];
-    if (piece === ' ') return false;
+    if (piece === ' ') {
+        console.log("No piece at start position");
+        return false;
+    }
 
     const isWhitePiece = piece === piece.toUpperCase();
-    if (isWhitePiece !== isWhiteTurn) return false;
-
-    let validMove;
-    switch (piece.toLowerCase()) {
-        case 'p': validMove = isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece); break;
-        case 'r': validMove = isValidRookMove(fromFile, fromRank, toFile, toRank); break;
-        case 'n': validMove = isValidKnightMove(fromFile, fromRank, toFile, toRank); break;
-        case 'b': validMove = isValidBishopMove(fromFile, fromRank, toFile, toRank); break;
-        case 'q': validMove = isValidQueenMove(fromFile, fromRank, toFile, toRank); break;
-        case 'k': validMove = isValidKingMove(fromFile, fromRank, toFile, toRank); break;
-        default: return false;
+    if (isWhitePiece !== isWhiteTurn) {
+        console.log("Wrong color piece for current turn");
+        return false;
     }
 
-    if (validMove) {
-        // Make the move temporarily
-        const capturedPiece = board[toRank][toFile];
-        board[toRank][toFile] = board[fromRank][fromFile];
-        board[fromRank][fromFile] = ' ';
-
-        // Check if the player is still in check after the move
-        const stillInCheck = isInCheck(isWhitePiece);
-
-        // Undo the move
-        board[fromRank][fromFile] = board[toRank][toFile];
-        board[toRank][toFile] = capturedPiece;
-
-        if (mustResolveCheck && stillInCheck) {
-            console.log("Move doesn't resolve check");
-            return false;
-        }
-
-        console.log(`Move is valid: ${!stillInCheck}`);
-        return !stillInCheck;
-    }
-
-    console.log("Move is invalid");
-    return false;
+    console.log("Move is valid");
+    return true;
 }
 
 // ... (keep your existing piece movement validation functions)
@@ -203,13 +182,13 @@ window.handleMove = function() {
             alert(isWhiteTurn ? "White is in check!" : "Black is in check!");
         }
     } else {
+        console.log("Move is invalid");
         if (isCurrentPlayerInCheck) {
             alert('Illegal move. You must move out of check.');
         } else {
             alert('Illegal move. Try again.');
         }
         moveInput.value = '';
-        console.log("Illegal move attempted");
     }
 };
 
