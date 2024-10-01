@@ -124,6 +124,12 @@ function isValidMove(move, isPlayerTurn) {
 
     console.log(`From: [${fromRank}, ${fromFile}], To: [${toRank}, ${toFile}]`);
 
+    if (fromRank < 0 || fromRank >= BOARD_SIZE || fromFile < 0 || fromFile >= BOARD_SIZE ||
+        toRank < 0 || toRank >= BOARD_SIZE || toFile < 0 || toFile >= BOARD_SIZE) {
+        console.log(`Invalid move: Out of bounds`);
+        return false;
+    }
+
     const piece = board[fromRank][fromFile];
     console.log(`Piece at from position: ${piece}`);
 
