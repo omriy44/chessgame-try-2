@@ -1,0 +1,40 @@
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+#board {
+    display: grid;
+    grid-template-columns: repeat(8, 50px);
+    grid-template-rows: repeat(8, 50px);
+    width: 400px;
+    height: 400px;
+    border: 2px solid #333;
+}
+
+.square {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+}
+
+.light { background-color: #f0d9b5; }
+.dark { background-color: #b58863; }
+
+.piece {
+    cursor: grab;
+    user-select: none;
+}
+
+.piece:active {
+    cursor: grabbing;
+}
+
+#turn {
+    margin-top: 20px;
+    font-size: 24px;
+    text-align: center;
+}
