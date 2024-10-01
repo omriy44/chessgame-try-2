@@ -86,26 +86,24 @@
         const isWhitePiece = piece === piece.toUpperCase();
         console.log("Is white piece:", isWhitePiece, "Is white turn:", isWhiteTurn);
 
-        if (isWhitePiece !== isWhiteTurn) {
-            console.log("Wrong color piece for current turn");
-            return false;
-        }
+        if (isWhitePiece !== isWhiteTurn) return false;
 
-        const targetPiece = board[toRank][toFile];
-        if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) {
-            console.log("Cannot capture own piece");
-            return false;
-        }
-
+        let validMove;
         switch (piece.toLowerCase()) {
-            case 'p': return isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece);
-            case 'r': return isValidRookMove(fromFile, fromRank, toFile, toRank);
-            case 'n': return isValidKnightMove(fromFile, fromRank, toFile, toRank);
-            case 'b': return isValidBishopMove(fromFile, fromRank, toFile, toRank);
-            case 'q': return isValidQueenMove(fromFile, fromRank, toFile, toRank);
-            case 'k': return isValidKingMove(fromFile, fromRank, toFile, toRank);
+            case 'p': validMove = isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece); break;
+            case 'r': validMove = isValidRookMove(fromFile, fromRank, toFile, toRank); break;
+            case 'n': validMove = isValidKnightMove(fromFile, fromRank, toFile, toRank); break;
+            case 'b': validMove = isValidBishopMove(fromFile, fromRank, toFile, toRank); break;
+            case 'q': validMove = isValidQueenMove(fromFile, fromRank, toFile, toRank); break;
+            case 'k': validMove = isValidKingMove(fromFile, fromRank, toFile, toRank); break;
             default: return false;
         }
+
+        if (validMove && doesMoveputPlayerInCheck(move, isWhitePiece)) {
+            return false;
+        }
+
+        return validMove;
     }
 
     function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
@@ -202,6 +200,55 @@
         });
     }
 
+    function isInCheck(isWhiteKing) {
+        // Find the king's position
+        let kingFile, kingRank;
+        const kingPiece = isWhiteKing ? 'K' : 'k';
+        for (let rank = 0; rank < BOARD_SIZE; rank++) {
+            for (let file = 0; file < BOARD_SIZE; file++) {
+                if (board[rank][file] === kingPiece) {
+                    kingFile = file;
+                    kingRank = rank;
+                    break;
+                }
+            }
+            if (kingFile !== undefined) break;
+        }
+
+        // Check if any opponent's piece can attack the king
+        for (let rank = 0; rank < BOARD_SIZE; rank++) {
+            for (let file = 0; file < BOARD_SIZE; file++) {
+                const piece = board[rank][file];
+                if (piece !== ' ' && isWhiteKing !== (piece === piece.toUpperCase())) {
+                    if (isValidMove(`${String.fromCharCode(97 + file)}${8 - rank}-${String.fromCharCode(97 + kingFile)}${8 - kingRank}`)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function doesMoveputPlayerInCheck(move, isWhitePlayer) {
+        const [from, to] = move.split('-');
+        const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+        const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+        // Make the move temporarily
+        const capturedPiece = board[toRank][toFile];
+        board[toRank][toFile] = board[fromRank][fromFile];
+        board[fromRank][fromFile] = ' ';
+
+        // Check if the player is in check after the move
+        const inCheck = isInCheck(isWhitePlayer);
+
+        // Undo the move
+        board[fromRank][fromFile] = board[toRank][toFile];
+        board[toRank][toFile] = capturedPiece;
+
+        return inCheck;
+    }
+
     window.handleMove = function() {
         const moveInput = document.getElementById('move');
         const move = moveInput.value.toLowerCase();
@@ -212,7 +259,10 @@
             updateBoard();
             moveInput.value = '';
             console.log("Move made successfully");
-            logBoardState();
+            
+            if (isInCheck(isWhiteTurn)) {
+                alert(isWhiteTurn ? "White is in check!" : "Black is in check!");
+            }
         } else {
             alert('Illegal move. Try again.');
             moveInput.value = '';
