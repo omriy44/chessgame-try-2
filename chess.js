@@ -308,8 +308,11 @@ let isTimeUp = false;
 
 function computerMove() {
     console.log("Starting computer move");
+    console.log("Current board state:");
+    printBoard();
     
     const possibleMoves = getAllPossibleMoves(false);
+    console.log("All possible moves:", possibleMoves);
     
     if (possibleMoves.length === 0) {
         console.log("No valid moves for computer");
@@ -321,41 +324,62 @@ function computerMove() {
         return;
     }
 
-    // First, check for any capturing moves
-    let capturingMoves = possibleMoves.filter(move => {
+    // Evaluate all moves
+    let bestMove = null;
+    let bestScore = -Infinity;
+
+    for (const move of possibleMoves) {
         const [from, to] = move.split('-');
+        const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
         const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
-        return board[toRank][toFile] !== ' ';
-    });
+        
+        const movingPiece = board[fromRank][fromFile];
+        const capturedPiece = board[toRank][toFile];
 
-    if (capturingMoves.length > 0) {
-        // If there are capturing moves, choose the one that captures the highest value piece
-        let bestMove = capturingMoves[0];
-        let bestValue = -Infinity;
+        console.log(`Evaluating move: ${move}`);
+        console.log(`Moving piece: ${movingPiece}, Captured piece: ${capturedPiece}`);
 
-        for (const move of capturingMoves) {
-            const [from, to] = move.split('-');
-            const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
-            const capturedPiece = board[toRank][toFile].toLowerCase();
-            const value = getPieceValue(capturedPiece);
+        const oldBoard = JSON.parse(JSON.stringify(board));
+        makeMove(move);
+        
+        const score = evaluatePosition();
+        console.log(`Score for move ${move}: ${score}`);
 
-            if (value > bestValue) {
-                bestValue = value;
-                bestMove = move;
-            }
+        board = oldBoard;
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+            console.log(`New best move: ${bestMove} with score ${bestScore}`);
         }
-
-        console.log(`Computer chooses capturing move: ${bestMove}`);
-        makeMove(bestMove);
-    } else {
-        // If no capturing moves, choose a random move
-        const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        console.log(`Computer chooses random move: ${randomMove}`);
-        makeMove(randomMove);
     }
 
+    if (!bestMove) {
+        bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        console.log("No best move found. Choosing random move:", bestMove);
+    }
+
+    console.log(`Computer chooses move: ${bestMove} with score ${bestScore}`);
+    makeMove(bestMove);
     isPlayerTurn = true;
     updateBoard();
+
+    console.log("Final board state after computer move:");
+    printBoard();
+}
+
+function evaluatePosition() {
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j].toLowerCase();
+            if (piece !== ' ') {
+                const value = getPieceValue(piece);
+                score += board[i][j] === board[i][j].toUpperCase() ? -value : value;
+            }
+        }
+    }
+    return score;
 }
 
 function getPieceValue(piece) {
@@ -370,268 +394,10 @@ function getPieceValue(piece) {
     return values[piece] || 0;
 }
 
-function evaluatePosition(isPlayerTurn) {
-    let score = 0;
-
-    // Material score
-    score += evaluateMaterial();
-
-    // Piece development and center control
-    score += evaluateDevelopmentAndCenter(isPlayerTurn);
-
-    // King safety
-    score += evaluateKingSafety(isPlayerTurn);
-
-    // Pawn structure
-    score += evaluatePawnStructure(isPlayerTurn);
-
-    return isPlayerTurn ? -score : score;
-}
-
-function evaluateMaterial() {
-    const pieceValues = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 0 };
-    let score = 0;
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            const piece = board[i][j].toLowerCase();
-            if (piece !== ' ') {
-                const value = pieceValues[piece];
-                score += board[i][j] === board[i][j].toUpperCase() ? value : -value;
-            }
-        }
-    }
-    return score * 100; // Prioritize material gain
-}
-
-function evaluateDevelopmentAndCenter(isPlayerTurn) {
-    const centerSquares = [[3,3], [3,4], [4,3], [4,4]];
-    let score = 0;
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            const piece = board[i][j].toLowerCase();
-            if (piece !== ' ' && piece !== 'p' && piece !== 'k') {
-                // Encourage piece development
-                score += (isPlayerTurn ? -1 : 1) * (piece === board[i][j].toUpperCase() ? 1 : -1);
-                
-                // Encourage controlling the center
-                if (centerSquares.some(([x, y]) => x === i && y === j)) {
-                    score += (isPlayerTurn ? -1 : 1) * (piece === board[i][j].toUpperCase() ? 2 : -2);
-                }
-            }
-        }
-    }
-    return score;
-}
-
-function evaluateKingSafety(isPlayerTurn) {
-    // Simplified king safety evaluation
-    const kingPos = findKing(isPlayerTurn);
-    if (!kingPos) return 0;
-
-    let score = 0;
-    const [kx, ky] = kingPos;
-
-    // Penalize king in the center
-    if (kx > 2 && kx < 6 && ky > 1 && ky < 6) {
-        score -= 5;
-    }
-
-    // Encourage castling
-    if ((kx === 0 || kx === 7) && (ky === 2 || ky === 6)) {
-        score += 10;
-    }
-
-    return score;
-}
-
-function evaluatePawnStructure(isPlayerTurn) {
-    let score = 0;
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        let pawnCount = 0;
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            if (board[j][i].toLowerCase() === 'p') {
-                pawnCount++;
-                // Penalize doubled pawns
-                if (pawnCount > 1) {
-                    score -= 5;
-                }
-                // Encourage pawn advancement
-                score += (isPlayerTurn ? -1 : 1) * (board[j][i] === 'P' ? j : 7 - j);
-            }
-        }
-    }
-    return score;
-}
-
-function findKing(isPlayerTurn) {
-    const kingPiece = isPlayerTurn ? 'K' : 'k';
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            if (board[i][j] === kingPiece) {
-                return [i, j];
-            }
-        }
-    }
-    return null;
-}
-
-function getAllPossibleMoves(isPlayerMove) {
-    const moves = [];
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) === isPlayerMove) {
-                const from = `${String.fromCharCode(97 + j)}${8 - i}`;
-                for (let x = 0; x < BOARD_SIZE; x++) {
-                    for (let y = 0; y < BOARD_SIZE; y++) {
-                        const to = `${String.fromCharCode(97 + y)}${8 - x}`;
-                        const move = `${from}-${to}`;
-                        if (isValidMove(move, isPlayerMove)) {
-                            moves.push(move);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return moves;
-}
-
-// Add this function to check if a king is in check
-function isInCheck(isWhiteKing) {
-    // Find the king's position
-    let kingPos;
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            if (board[i][j] === (isWhiteKing ? 'K' : 'k')) {
-                kingPos = { rank: i, file: j };
-                break;
-            }
-        }
-        if (kingPos) break;
-    }
-
-    // Check if any opponent's piece can attack the king
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhiteKing) {
-                const move = `${String.fromCharCode(97 + j)}${8 - i}-${String.fromCharCode(97 + kingPos.file)}${8 - kingPos.rank}`;
-                if (isValidMove(move)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-// Add this function to check the board state
-function isBoardValid() {
-    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
-        console.error("Invalid board structure");
-        return false;
-    }
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
-            console.error(`Invalid board row at index ${i}`);
-            return false;
-        }
-    }
-    return true;
-}
-
-// Add these logging functions at the top of your chess.js file
-function logBoard() {
-    console.log("Current board state:");
+function printBoard() {
     for (let i = 0; i < BOARD_SIZE; i++) {
         console.log(board[i].join(' '));
     }
-}
-
-function logMove(move, message) {
-    console.log(`${message}: ${move}`);
-}
-
-function checkBoardIntegrity() {
-    console.log("Checking board integrity");
-    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
-        console.error("Invalid board structure");
-        return false;
-    }
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
-            console.error(`Invalid row at index ${i}`);
-            return false;
-        }
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            if (typeof board[i][j] !== 'string') {
-                console.error(`Invalid piece at [${i}, ${j}]: ${board[i][j]}`);
-                return false;
-            }
-        }
-    }
-    console.log("Board integrity check passed");
-    return true;
-}
-
-function isPawnMove(fromRank, fromFile, toRank, toFile, isWhite, isCapture) {
-    console.log(`Checking pawn move: fromRank=${fromRank}, fromFile=${fromFile}, toRank=${toRank}, toFile=${toFile}, isWhite=${isWhite}, isCapture=${isCapture}`);
-    const direction = isWhite ? -1 : 1;
-    const startRank = isWhite ? 6 : 1;
-    
-    if (isCapture) {
-        const isValidCapture = toRank === fromRank + direction && Math.abs(toFile - fromFile) === 1;
-        console.log(`Is valid pawn capture: ${isValidCapture}`);
-        return isValidCapture;
-    } else {
-        if (fromRank === startRank && toRank === fromRank + 2 * direction && fromFile === toFile) {
-            const isValidDoubleMove = board[fromRank + direction][fromFile] === ' ' && board[toRank][toFile] === ' ';
-            console.log(`Is valid pawn double move: ${isValidDoubleMove}`);
-            return isValidDoubleMove;
-        }
-        const isValidSingleMove = toRank === fromRank + direction && fromFile === toFile && board[toRank][toFile] === ' ';
-        console.log(`Is valid pawn single move: ${isValidSingleMove}`);
-        return isValidSingleMove;
-    }
-}
-
-function isRookMove(fromRank, fromFile, toRank, toFile) {
-    return (fromRank === toRank || fromFile === toFile) && isPathClear(fromRank, fromFile, toRank, toFile);
-}
-
-function isKnightMove(fromRank, fromFile, toRank, toFile) {
-    const rankDiff = Math.abs(toRank - fromRank);
-    const fileDiff = Math.abs(toFile - fromFile);
-    return (rankDiff === 2 && fileDiff === 1) || (rankDiff === 1 && fileDiff === 2);
-}
-
-function isBishopMove(fromRank, fromFile, toRank, toFile) {
-    return Math.abs(toRank - fromRank) === Math.abs(toFile - fromFile) && isPathClear(fromRank, fromFile, toRank, toFile);
-}
-
-function isQueenMove(fromRank, fromFile, toRank, toFile) {
-    return (isRookMove(fromRank, fromFile, toRank, toFile) || isBishopMove(fromRank, fromFile, toRank, toFile));
-}
-
-function isKingMove(fromRank, fromFile, toRank, toFile) {
-    return Math.abs(toRank - fromRank) <= 1 && Math.abs(toFile - fromFile) <= 1;
-}
-
-function isPathClear(fromRank, fromFile, toRank, toFile) {
-    const rankStep = Math.sign(toRank - fromRank);
-    const fileStep = Math.sign(toFile - fromFile);
-    let currentRank = fromRank + rankStep;
-    let currentFile = fromFile + fileStep;
-
-    while (currentRank !== toRank || currentFile !== toFile) {
-        if (board[currentRank][currentFile] !== ' ') {
-            return false;
-        }
-        currentRank += rankStep;
-        currentFile += fileStep;
-    }
-    return true;
 }
 
 function evaluateBoard() {
