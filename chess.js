@@ -26,7 +26,9 @@ function initializeBoard() {
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
+    isPlayerTurn = true;
     console.log("Board initialized:", JSON.stringify(board));
+    console.log("It's the player's turn to move.");
 }
 
 function createBoardDOM() {
@@ -87,7 +89,10 @@ function allowDrop(event) {
 
 function drop(event) {
     event.preventDefault();
-    if (!isPlayerTurn) return;
+    if (!isPlayerTurn) {
+        console.log("It's not the player's turn yet.");
+        return;
+    }
 
     const fromSquareId = event.dataTransfer.getData("text");
     const toSquareId = event.target.closest('.square').id;
@@ -96,12 +101,16 @@ function drop(event) {
     console.log(`Player attempting move: ${move}`);
     console.log("Board state before move:", JSON.stringify(board));
 
-    if (isValidMove(move)) {
+    if (isValidMove(move, true)) {
         makeMove(move);
         isPlayerTurn = false;
         updateBoard();
         console.log("Board state after player move:", JSON.stringify(board));
-        setTimeout(computerMove, 500);
+        
+        // Schedule the computer's move after a short delay
+        setTimeout(() => {
+            computerMove();
+        }, 500);
     } else {
         alert("Invalid move. Please try again.");
     }
@@ -178,6 +187,11 @@ function computerMove() {
     console.log("Starting computer move");
     console.log("Current board state:", JSON.stringify(board));
 
+    if (!isPlayerTurn) {
+        console.log("It's not the computer's turn yet.");
+        return;
+    }
+
     const possibleMoves = getAllPossibleMoves(false);
     console.log(`Possible moves: ${possibleMoves.length}`);
 
@@ -201,6 +215,7 @@ function computerMove() {
     updateBoard();
 
     console.log("Board after computer move:", JSON.stringify(board));
+    console.log("Waiting for player's move...");
 }
 
 function getAllPossibleMoves(isWhite) {
