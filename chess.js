@@ -1,62 +1,140 @@
+const BOARD_SIZE = 8;
+let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
 let isWhiteTurn = true;
 
-function initializeGame() {
-    const board = document.getElementById('board');
-    board.innerHTML = ''; // Clear the board
+const PIECES = {
+    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
+    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
+};
 
-    for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
+function initializeBoard() {
+    board = [
+        ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+        ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+        ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+        ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+    ];
+}
+
+function createBoardDOM() {
+    const boardElement = document.getElementById('board');
+    boardElement.innerHTML = '';
+
+    // Add top coordinates
+    boardElement.appendChild(createCoordinate(''));
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        boardElement.appendChild(createCoordinate(String.fromCharCode(97 + i)));
+    }
+
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        // Add left coordinates
+        boardElement.appendChild(createCoordinate(8 - i));
+
+        for (let j = 0; j < BOARD_SIZE; j++) {
             const square = document.createElement('div');
-            square.className = 'square ' + ((i + j) % 2 === 0 ? 'light' : 'dark');
             square.id = `${String.fromCharCode(97 + j)}${8 - i}`;
-            
-            if (i < 2 || i > 5) {
-                const piece = document.createElement('div');
-                piece.className = 'piece ' + (i < 2 ? 'black' : 'white');
-                piece.textContent = '♟'; // Using pawn for all pieces for simplicity
-                piece.draggable = true;
-                piece.addEventListener('dragstart', dragStart);
-                square.appendChild(piece);
-            }
-            
-            square.addEventListener('dragover', dragOver);
+            square.classList.add('square');
+            square.classList.add((i + j) % 2 === 0 ? 'light' : 'dark');
+            square.addEventListener('dragover', allowDrop);
             square.addEventListener('drop', drop);
-            board.appendChild(square);
+            boardElement.appendChild(square);
         }
     }
-    updateTurnDisplay();
 }
 
-function dragStart(e) {
-    const piece = e.target;
-    if ((isWhiteTurn && piece.classList.contains('white')) || 
-        (!isWhiteTurn && piece.classList.contains('black'))) {
-        e.dataTransfer.setData('text/plain', e.target.id);
-    } else {
-        e.preventDefault();
+function createCoordinate(text) {
+    const coordinate = document.createElement('div');
+    coordinate.classList.add('coordinate');
+    coordinate.textContent = text;
+    return coordinate;
+}
+
+function updateBoard() {
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
+            const square = document.getElementById(squareId);
+            square.innerHTML = '';
+            const piece = board[i][j];
+            if (piece !== ' ') {
+                const pieceElement = document.createElement('div');
+                pieceElement.classList.add('piece');
+                pieceElement.textContent = PIECES[piece];
+                pieceElement.draggable = true;
+                pieceElement.addEventListener('dragstart', drag);
+                square.appendChild(pieceElement);
+            }
+        }
     }
+    document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
 }
 
-function dragOver(e) {
-    e.preventDefault();
-}
-
-function drop(e) {
-    e.preventDefault();
-    const pieceId = e.dataTransfer.getData('text');
-    const piece = document.getElementById(pieceId);
+function drag(event) {
+    const square = event.target.parentNode;
+    const [file, rank] = [square.id.charCodeAt(0) - 97, 8 - parseInt(square.id[1])];
+    const piece = board[rank][file];
+    const isWhitePiece = piece === piece.toUpperCase();
     
-    if (piece && e.target.classList.contains('square')) {
-        e.target.innerHTML = '';
-        e.target.appendChild(piece);
+    if (isWhitePiece !== isWhiteTurn) {
+        event.preventDefault();
+        return false;
+    }
+    event.dataTransfer.setData("text", square.id);
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+}
+
+function drop(event) {
+    event.preventDefault();
+    const fromSquareId = event.dataTransfer.getData("text");
+    const toSquareId = event.target.closest('.square').id;
+    const move = `${fromSquareId}-${toSquareId}`;
+    
+    if (isValidMove(move)) {
+        makeMove(move);
         isWhiteTurn = !isWhiteTurn;
-        updateTurnDisplay();
+        updateBoard();
+    } else {
+        alert("Invalid move. Please try again.");
     }
 }
 
-function updateTurnDisplay() {
-    const turnDisplay = document.getElementById('turn');
-    turnDisplay.textContent = isWhiteTurn ? "White's turn" : "Black's turn";
+function isValidMove(move) {
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    const piece = board[fromRank][fromFile];
+    if (piece === ' ') return false;
+
+    const isWhitePiece = piece === piece.toUpperCase();
+    if (isWhitePiece !== isWhiteTurn) return false;
+
+    const targetPiece = board[toRank][toFile];
+    if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) return false;
+
+    // Add piece-specific move validation here
+    // For now, we'll allow any move that's not to the same square
+    return from !== to;
 }
 
-window.onload = initializeGame;
+function makeMove(move) {
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    board[toRank][toFile] = board[fromRank][fromFile];
+    board[fromRank][fromFile] = ' ';
+}
+
+window.onload = function() {
+    createBoardDOM();
+    initializeBoard();
+    updateBoard();
+};
