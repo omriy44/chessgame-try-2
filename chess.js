@@ -101,7 +101,7 @@ function drop(event) {
     console.log(`Player attempting move: ${move}`);
     console.log("Board state before move:", JSON.stringify(board));
 
-    if (isValidMove(move, true)) {
+    if (isValidMove(move, true)) {  // Pass true for player's turn
         makeMove(move);
         isPlayerTurn = false;
         updateBoard();
@@ -116,28 +116,42 @@ function drop(event) {
     }
 }
 
-function isValidMove(move, isWhite) {
-    console.log(`Checking if move is valid: ${move} for ${isWhite ? 'white' : 'black'}`);
+function isValidMove(move, isPlayerTurn) {
+    console.log(`Checking if move ${move} is valid for ${isPlayerTurn ? 'player' : 'computer'}`);
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+    console.log(`From: [${fromRank}, ${fromFile}], To: [${toRank}, ${toFile}]`);
+
     const piece = board[fromRank][fromFile];
     console.log(`Piece at from position: ${piece}`);
 
-    if (piece === ' ' || (piece === piece.toUpperCase()) === isWhite) {
+    // Check if the piece belongs to the current player
+    const isPieceWhite = piece === piece.toUpperCase();
+    if (piece === ' ' || isPieceWhite !== isPlayerTurn) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
 
     const targetPiece = board[toRank][toFile];
-    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) !== isWhite) {
+    console.log(`Target piece: ${targetPiece}`);
+
+    // Check if the target square is empty or contains an opponent's piece
+    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) === isPlayerTurn) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
 
     // For simplicity, we'll allow any move that's not to the same square
-    return from !== to;
+    // You can add more specific move validation for each piece type here
+    if (from === to) {
+        console.log(`Invalid move: Cannot move to the same square`);
+        return false;
+    }
+
+    console.log(`Move ${move} is valid`);
+    return true;
 }
 
 function makeMove(move) {
@@ -146,19 +160,13 @@ function makeMove(move) {
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
-    if (fromRank < 0 || fromRank >= BOARD_SIZE || fromFile < 0 || fromFile >= BOARD_SIZE ||
-        toRank < 0 || toRank >= BOARD_SIZE || toFile < 0 || toFile >= BOARD_SIZE) {
-        console.error(`Invalid move: ${move}`);
-        return;
-    }
-
-    console.log(`Moving piece from [${fromRank}, ${fromFile}] to [${toRank}, ${toFile}]`);
+    console.log(`Moving from [${fromRank}, ${fromFile}] to [${toRank}, ${toFile}]`);
     console.log(`Piece being moved: ${board[fromRank][fromFile]}`);
+    console.log(`Piece at destination before move: ${board[toRank][toFile]}`);
 
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
 
-    moveCount++;
     console.log("Board after move:", JSON.stringify(board));
 }
 
