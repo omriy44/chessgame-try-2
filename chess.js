@@ -93,14 +93,16 @@ function updateBoard() {
 }
 
 function drag(event) {
-    const piece = event.target.textContent;
-    const isWhitePiece = piece === PIECES[piece.toUpperCase()];
+    const square = event.target.closest('.square');
+    const piece = board[8 - parseInt(square.id[1])][square.id.charCodeAt(0) - 97];
+    const isWhitePiece = piece === piece.toUpperCase();
+    
     if (isWhitePiece !== isWhiteTurn) {
         event.preventDefault();
         alert("It's not your turn!");
         return false;
     }
-    event.dataTransfer.setData("text", event.target.parentNode.id);
+    event.dataTransfer.setData("text", square.id);
 }
 
 function allowDrop(event) {
