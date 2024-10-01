@@ -307,9 +307,16 @@ function orderMoves(moves) {
 function computerMove() {
     console.log("Starting computer move");
     
-    const bestMove = iterativeDeepening(5000); // 5 seconds time limit
+    const startTime = Date.now();
+    const timeLimit = 3000; // 3 seconds time limit
+    const maxDepth = 3; // Maximum depth to search
 
-    if (!bestMove) {
+    let bestMove = null;
+    let bestScore = -Infinity;
+
+    const possibleMoves = getAllPossibleMoves(false);
+    
+    if (possibleMoves.length === 0) {
         console.log("No valid moves for computer");
         if (isInCheck(false)) {
             alert("Checkmate! You win!");
@@ -319,39 +326,15 @@ function computerMove() {
         return;
     }
 
-    console.log(`Computer chooses move: ${bestMove}`);
-    makeMove(bestMove);
-    isPlayerTurn = true;
-    updateBoard();
-}
-
-function iterativeDeepening(maxTime) {
-    const startTime = Date.now();
-    let bestMove = null;
-    let depth = 1;
-
-    while (Date.now() - startTime < maxTime) {
-        const result = searchAtDepth(depth);
-        if (result) {
-            bestMove = result;
-        } else {
+    for (const move of possibleMoves) {
+        if (Date.now() - startTime > timeLimit) {
+            console.log("Time limit reached");
             break;
         }
-        depth++;
-    }
 
-    return bestMove;
-}
-
-function searchAtDepth(depth) {
-    const possibleMoves = orderMoves(getAllPossibleMoves(false));
-    let bestMove = null;
-    let bestScore = -Infinity;
-
-    for (const move of possibleMoves) {
         const oldBoard = JSON.parse(JSON.stringify(board));
         makeMove(move);
-        const score = minimax(depth - 1, -Infinity, Infinity, true);
+        const score = minimaxWithTimeout(maxDepth - 1, -Infinity, Infinity, true, startTime, timeLimit);
         board = oldBoard;
 
         if (score > bestScore) {
@@ -360,7 +343,55 @@ function searchAtDepth(depth) {
         }
     }
 
-    return bestMove;
+    if (!bestMove) {
+        bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        console.log("Choosing random move due to timeout");
+    }
+
+    console.log(`Computer chooses move: ${bestMove}`);
+    makeMove(bestMove);
+    isPlayerTurn = true;
+    updateBoard();
+
+    console.log(`Move calculation took ${Date.now() - startTime} ms`);
+}
+
+function minimaxWithTimeout(depth, alpha, beta, isMaximizingPlayer, startTime, timeLimit) {
+    if (Date.now() - startTime > timeLimit) {
+        throw new Error("Timeout");
+    }
+
+    if (depth === 0) {
+        return evaluateBoard();
+    }
+
+    const moves = getAllPossibleMoves(isMaximizingPlayer);
+
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimaxWithTimeout(depth - 1, alpha, beta, false, startTime, timeLimit);
+            board = oldBoard;
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+            const oldBoard = JSON.parse(JSON.stringify(board));
+            makeMove(move);
+            const eval = minimaxWithTimeout(depth - 1, alpha, beta, true, startTime, timeLimit);
+            board = oldBoard;
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
 }
 
 function getAllPossibleMoves(isPlayerMove) {
@@ -529,84 +560,10 @@ function evaluateBoard() {
             const piece = board[i][j];
             if (piece !== ' ') {
                 score += PIECE_VALUES[piece];
-                switch (piece.toLowerCase()) {
-                    case 'p':
-                        score += (piece === 'P' ? PAWN_TABLE[i][j] : -PAWN_TABLE[7-i][j]);
-                        break;
-                    case 'n':
-                        score += (piece === 'N' ? KNIGHT_TABLE[i][j] : -KNIGHT_TABLE[7-i][j]);
-                        break;
-                    case 'b':
-                        score += (piece === 'B' ? BISHOP_TABLE[i][j] : -BISHOP_TABLE[7-i][j]);
-                        break;
-                    case 'r':
-                        score += (piece === 'R' ? ROOK_TABLE[i][j] : -ROOK_TABLE[7-i][j]);
-                        break;
-                    case 'q':
-                        score += (piece === 'Q' ? QUEEN_TABLE[i][j] : -QUEEN_TABLE[7-i][j]);
-                        break;
-                    case 'k':
-                        score += (piece === 'K' ? KING_TABLE[i][j] : -KING_TABLE[7-i][j]);
-                        break;
-                }
             }
         }
     }
     return score;
-}
-
-const transpositionTable = new Map();
-
-function boardToString() {
-    return board.map(row => row.join('')).join('');
-}
-
-function minimax(depth, alpha, beta, isMaximizingPlayer) {
-    const boardString = boardToString();
-    const tableEntry = transpositionTable.get(boardString);
-    if (tableEntry && tableEntry.depth >= depth) {
-        return tableEntry.score;
-    }
-
-    if (depth === 0) {
-        const score = evaluateBoard();
-        transpositionTable.set(boardString, { score, depth });
-        return score;
-    }
-
-    if (isMaximizingPlayer) {
-        let maxEval = -Infinity;
-        const moves = getAllPossibleMoves(false);
-        for (const move of moves) {
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, false);
-            board = oldBoard;
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        transpositionTable.set(boardString, { score: maxEval, depth });
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        const moves = getAllPossibleMoves(true);
-        for (const move of moves) {
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, true);
-            board = oldBoard;
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        transpositionTable.set(boardString, { score: minEval, depth });
-        return minEval;
-    }
 }
 
 window.onload = function() {
