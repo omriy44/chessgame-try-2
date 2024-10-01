@@ -23,7 +23,7 @@ function initializeBoard() {
         ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
         ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
     ];
-    console.log("Board initialized:", board);
+    console.log("Board initialized:", JSON.stringify(board));
 }
 
 function createBoardDOM() {
@@ -83,10 +83,14 @@ function drop(event) {
     const toSquareId = event.target.closest('.square').id;
     const move = `${fromSquareId}-${toSquareId}`;
     
+    console.log(`Player attempting move: ${move}`);
+    console.log("Board state before move:", JSON.stringify(board));
+
     if (isValidMove(move)) {
         makeMove(move);
         isPlayerTurn = false;
         updateBoard();
+        console.log("Board state after player move:", JSON.stringify(board));
         setTimeout(computerMove, 500);
     } else {
         alert("Invalid move. Please try again.");
@@ -212,9 +216,9 @@ function makeMove(move) {
 
 function computerMove() {
     console.log("Starting computer move");
-    logBoard();
+    console.log("Current board state:", JSON.stringify(board));
 
-    if (!isBoardValid()) {
+    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
         console.error("Invalid board state. Reinitializing the board.");
         initializeBoard();
         updateBoard();
@@ -226,7 +230,7 @@ function computerMove() {
     const bestMove = findBestMove(depth);
     
     if (bestMove) {
-        logMove(bestMove, "Computer's chosen move");
+        console.log(`Computer's chosen move: ${bestMove}`);
         makeMove(bestMove);
         isPlayerTurn = true;
         updateBoard();
@@ -362,15 +366,20 @@ function undoMove(move, capturedPiece) {
 
 function getAllPossibleMoves(isWhite) {
     console.log(`Getting all possible moves for ${isWhite ? 'white' : 'black'}`);
+    console.log("Current board state:", JSON.stringify(board));
     const moves = [];
-    if (!isBoardValid()) {
+    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
         console.error("Invalid board state in getAllPossibleMoves");
         return moves;
     }
     for (let i = 0; i < BOARD_SIZE; i++) {
+        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
+            console.error(`Invalid board row at index ${i}`);
+            continue;
+        }
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (!piece) {
+            if (piece === undefined) {
                 console.error(`Undefined piece at position [${i}, ${j}]`);
                 continue;
             }
@@ -449,7 +458,7 @@ function logMove(move, message) {
 }
 
 window.onload = function() {
-    createBoardDOM();
     initializeBoard();
+    createBoardDOM();
     updateBoard();
 };
