@@ -88,11 +88,14 @@ function drop(event) {
 }
 
 function isValidMove(move) {
+    console.log("Checking move:", move);
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
     const piece = board[fromRank][fromFile];
+    console.log("Piece:", piece);
+
     if (piece === ' ' || piece !== piece.toUpperCase()) return false;
 
     const targetPiece = board[toRank][toFile];
@@ -194,19 +197,34 @@ function makeMove(move) {
 }
 
 function computerMove() {
-    const bestMove = findBestMove(3); // 3 is the depth of search
+    console.log("Starting computer move");
+    const allMoves = getAllPossibleMoves(false);
+    console.log("All possible moves for computer:", allMoves);
+
+    if (allMoves.length === 0) {
+        console.log("No valid moves found for computer");
+        if (isInCheck(false)) {
+            alert("Checkmate! You win!");
+        } else {
+            alert("Stalemate! The game is a draw.");
+        }
+        return;
+    }
+
+    const bestMove = findBestMove(2); // Reduced depth for quicker response
+    console.log("Best move found:", bestMove);
+
     if (bestMove) {
         makeMove(bestMove);
         isPlayerTurn = true;
         updateBoard();
     } else {
-        console.log("No valid moves found for computer");
-        // Check if the computer's king is in check
-        if (isInCheck(!isPlayerTurn)) {
-            alert("Checkmate! You win!");
-        } else {
-            alert("Stalemate! The game is a draw.");
-        }
+        console.error("Unexpected: No best move found despite having valid moves");
+        // Fallback to a random move
+        const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+        makeMove(randomMove);
+        isPlayerTurn = true;
+        updateBoard();
     }
 }
 
@@ -293,7 +311,7 @@ function getAllPossibleMoves(isWhite) {
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) === isWhite) {
+            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhite) {
                 const from = `${String.fromCharCode(97 + j)}${8 - i}`;
                 for (let x = 0; x < BOARD_SIZE; x++) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
