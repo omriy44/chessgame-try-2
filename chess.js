@@ -149,42 +149,47 @@ function isValidMove(move, isPlayerMove) {
     console.log(`Target piece: ${targetPiece}`);
 
     // Check if the target square is empty or contains an opponent's piece
-    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) !== isPieceWhite) {
+    const isCapture = targetPiece !== ' ';
+    if (isCapture && (targetPiece === targetPiece.toUpperCase()) !== isPieceWhite) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
 
     // Piece-specific move validation
     const pieceType = piece.toLowerCase();
-    const rankDiff = Math.abs(toRank - fromRank);
-    const fileDiff = Math.abs(toFile - fromFile);
+    let isValidPieceMove;
 
     switch (pieceType) {
-        case 'p': // Pawn
-            if (isPieceWhite) {
-                if (fromRank === 6 && toRank === 4 && fromFile === toFile && targetPiece === ' ') return true; // Initial two-square move
-                if (toRank === fromRank - 1 && fromFile === toFile && targetPiece === ' ') return true; // Regular move
-                if (toRank === fromRank - 1 && Math.abs(toFile - fromFile) === 1 && targetPiece !== ' ') return true; // Capture
-            } else {
-                if (fromRank === 1 && toRank === 3 && fromFile === toFile && targetPiece === ' ') return true; // Initial two-square move
-                if (toRank === fromRank + 1 && fromFile === toFile && targetPiece === ' ') return true; // Regular move
-                if (toRank === fromRank + 1 && Math.abs(toFile - fromFile) === 1 && targetPiece !== ' ') return true; // Capture
-            }
+        case 'p':
+            isValidPieceMove = isPawnMove(fromRank, fromFile, toRank, toFile, isPieceWhite, isCapture);
             break;
-        case 'r': // Rook
-            return (rankDiff === 0 || fileDiff === 0) && isPathClear(fromRank, fromFile, toRank, toFile);
-        case 'n': // Knight
-            return (rankDiff === 2 && fileDiff === 1) || (rankDiff === 1 && fileDiff === 2);
-        case 'b': // Bishop
-            return rankDiff === fileDiff && isPathClear(fromRank, fromFile, toRank, toFile);
-        case 'q': // Queen
-            return (rankDiff === 0 || fileDiff === 0 || rankDiff === fileDiff) && isPathClear(fromRank, fromFile, toRank, toFile);
-        case 'k': // King
-            return rankDiff <= 1 && fileDiff <= 1;
+        case 'r':
+            isValidPieceMove = isRookMove(fromRank, fromFile, toRank, toFile);
+            break;
+        case 'n':
+            isValidPieceMove = isKnightMove(fromRank, fromFile, toRank, toFile);
+            break;
+        case 'b':
+            isValidPieceMove = isBishopMove(fromRank, fromFile, toRank, toFile);
+            break;
+        case 'q':
+            isValidPieceMove = isQueenMove(fromRank, fromFile, toRank, toFile);
+            break;
+        case 'k':
+            isValidPieceMove = isKingMove(fromRank, fromFile, toRank, toFile);
+            break;
+        default:
+            console.log(`Invalid piece type: ${pieceType}`);
+            return false;
     }
 
-    console.log(`Invalid move for ${pieceType}`);
-    return false;
+    if (!isValidPieceMove) {
+        console.log(`Invalid move for ${pieceType}`);
+        return false;
+    }
+
+    console.log(`Move ${move} is valid`);
+    return true;
 }
 
 function makeMove(move) {
@@ -359,6 +364,42 @@ function checkBoardIntegrity() {
     }
     console.log("Board integrity check passed");
     return true;
+}
+
+function isPawnMove(fromRank, fromFile, toRank, toFile, isWhite, isCapture) {
+    const direction = isWhite ? -1 : 1;
+    const startRank = isWhite ? 6 : 1;
+    
+    if (isCapture) {
+        return toRank === fromRank + direction && Math.abs(toFile - fromFile) === 1;
+    } else {
+        if (fromRank === startRank && toRank === fromRank + 2 * direction && fromFile === toFile) {
+            return board[fromRank + direction][fromFile] === ' '; // Check if the square in between is empty
+        }
+        return toRank === fromRank + direction && fromFile === toFile;
+    }
+}
+
+function isRookMove(fromRank, fromFile, toRank, toFile) {
+    return (fromRank === toRank || fromFile === toFile) && isPathClear(fromRank, fromFile, toRank, toFile);
+}
+
+function isKnightMove(fromRank, fromFile, toRank, toFile) {
+    const rankDiff = Math.abs(toRank - fromRank);
+    const fileDiff = Math.abs(toFile - fromFile);
+    return (rankDiff === 2 && fileDiff === 1) || (rankDiff === 1 && fileDiff === 2);
+}
+
+function isBishopMove(fromRank, fromFile, toRank, toFile) {
+    return Math.abs(toRank - fromRank) === Math.abs(toFile - fromFile) && isPathClear(fromRank, fromFile, toRank, toFile);
+}
+
+function isQueenMove(fromRank, fromFile, toRank, toFile) {
+    return (isRookMove(fromRank, fromFile, toRank, toFile) || isBishopMove(fromRank, fromFile, toRank, toFile));
+}
+
+function isKingMove(fromRank, fromFile, toRank, toFile) {
+    return Math.abs(toRank - fromRank) <= 1 && Math.abs(toFile - fromFile) <= 1;
 }
 
 function isPathClear(fromRank, fromFile, toRank, toFile) {
