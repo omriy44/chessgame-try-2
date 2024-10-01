@@ -129,14 +129,33 @@ function isValidMove(move, isWhite) {
 }
 
 function makeMove(move) {
+    console.log(`Making move: ${move}`);
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
-    const capturedPiece = board[toRank][toFile];
+    console.log(`Moving piece from [${fromRank}, ${fromFile}] to [${toRank}, ${toFile}]`);
+    console.log(`Piece being moved: ${board[fromRank][fromFile]}`);
+
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
-    return capturedPiece;
+
+    console.log("Board after move:", JSON.stringify(board));
+}
+
+function undoMove(move) {
+    console.log(`Undoing move: ${move}`);
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    console.log(`Moving piece from [${toRank}, ${toFile}] back to [${fromRank}, ${fromFile}]`);
+    console.log(`Piece being moved back: ${board[toRank][toFile]}`);
+
+    board[fromRank][fromFile] = board[toRank][toFile];
+    board[toRank][toFile] = ' ';
+
+    console.log("Board after undo:", JSON.stringify(board));
 }
 
 function computerMove() {
@@ -210,15 +229,18 @@ function findBestMove(depth) {
 }
 
 function minimax(depth, alpha, beta, isMaximizingPlayer) {
+    console.log(`Minimax called with depth: ${depth}, isMaximizingPlayer: ${isMaximizingPlayer}`);
     if (depth === 0) {
         return evaluateBoard();
     }
 
     const moves = getAllPossibleMoves(isMaximizingPlayer);
+    console.log(`Possible moves at depth ${depth}:`, moves);
 
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
         for (const move of moves) {
+            console.log(`Evaluating move: ${move}`);
             makeMove(move);
             const eval = minimax(depth - 1, alpha, beta, false);
             undoMove(move);
@@ -232,6 +254,7 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
     } else {
         let minEval = Infinity;
         for (const move of moves) {
+            console.log(`Evaluating move: ${move}`);
             makeMove(move);
             const eval = minimax(depth - 1, alpha, beta, true);
             undoMove(move);
@@ -246,23 +269,32 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
 }
 
 function evaluateBoard() {
+    console.log("Evaluating board");
+    console.log("Current board state:", JSON.stringify(board));
     let score = 0;
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
+            console.log(`Evaluating piece at [${i}, ${j}]: ${piece}`);
             if (piece && piece !== ' ') {
-                score += PIECE_VALUES[piece] || 0;
+                const pieceValue = PIECE_VALUES[piece] || 0;
+                console.log(`Piece value: ${pieceValue}`);
+                score += pieceValue;
                 // Add positional bonuses
-                score += getPositionalBonus(piece, i, j);
+                const posBonus = getPositionalBonus(piece, i, j);
+                console.log(`Positional bonus: ${posBonus}`);
+                score += posBonus;
             }
         }
     }
+    console.log(`Final evaluation score: ${score}`);
     return score;
 }
 
 function getPositionalBonus(piece, rank, file) {
-    if (!piece) {
-        console.error(`Undefined piece at rank ${rank}, file ${file}`);
+    console.log(`Getting positional bonus for piece: ${piece} at rank: ${rank}, file: ${file}`);
+    if (!piece || piece === ' ') {
+        console.warn(`No piece at rank ${rank}, file ${file}`);
         return 0;
     }
 
@@ -299,15 +331,6 @@ function getPositionalBonus(piece, rank, file) {
         default:
             return 0;
     }
-}
-
-function undoMove(move, capturedPiece) {
-    const [from, to] = move.split('-');
-    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
-    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
-
-    board[fromRank][fromFile] = board[toRank][toFile];
-    board[toRank][toFile] = capturedPiece;
 }
 
 function getAllPossibleMoves(isWhite) {
