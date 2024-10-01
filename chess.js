@@ -310,7 +310,7 @@ function computerMove() {
     console.log("Starting computer move");
     
     const startTime = Date.now();
-    const timeLimit = 15000; // 15 seconds time limit
+    const timeLimit = 5000; // 5 seconds time limit
 
     const possibleMoves = getAllPossibleMoves(false);
     
@@ -326,38 +326,22 @@ function computerMove() {
 
     let bestMove = null;
     let bestScore = -Infinity;
-    let depth = 1;
 
-    while (Date.now() - startTime < timeLimit) {
-        let currentBestMove = null;
-        let currentBestScore = -Infinity;
-        let alpha = -Infinity;
-        let beta = Infinity;
+    for (const move of possibleMoves) {
+        const oldBoard = JSON.parse(JSON.stringify(board));
+        makeMove(move);
+        const score = evaluatePosition(false);
+        board = oldBoard;
 
-        for (const move of possibleMoves) {
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const score = minimax(depth - 1, alpha, beta, true, startTime, timeLimit);
-            board = oldBoard;
-
-            if (score > currentBestScore) {
-                currentBestScore = score;
-                currentBestMove = move;
-            }
-            alpha = Math.max(alpha, score);
-
-            if (Date.now() - startTime >= timeLimit) {
-                console.log(`Time limit reached at depth ${depth}`);
-                break;
-            }
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
         }
 
-        if (currentBestMove) {
-            bestMove = currentBestMove;
-            bestScore = currentBestScore;
+        if (Date.now() - startTime > timeLimit) {
+            console.log("Time limit reached");
+            break;
         }
-
-        depth++;
     }
 
     if (!bestMove) {
@@ -365,7 +349,7 @@ function computerMove() {
         console.log("Choosing random move");
     }
 
-    console.log(`Computer chooses move: ${bestMove} with score ${bestScore} at depth ${depth - 1}`);
+    console.log(`Computer chooses move: ${bestMove} with score ${bestScore}`);
     makeMove(bestMove);
     isPlayerTurn = true;
     updateBoard();
@@ -373,38 +357,109 @@ function computerMove() {
     console.log(`Move calculation took ${Date.now() - startTime} ms`);
 }
 
-function minimax(depth, alpha, beta, isMaximizingPlayer, startTime, timeLimit) {
-    if (Date.now() - startTime >= timeLimit || depth === 0) {
-        return evaluateBoard();
+function evaluatePosition(isPlayerTurn) {
+    let score = 0;
+
+    // Material score
+    score += evaluateMaterial();
+
+    // Piece development and center control
+    score += evaluateDevelopmentAndCenter(isPlayerTurn);
+
+    // King safety
+    score += evaluateKingSafety(isPlayerTurn);
+
+    // Pawn structure
+    score += evaluatePawnStructure(isPlayerTurn);
+
+    return isPlayerTurn ? -score : score;
+}
+
+function evaluateMaterial() {
+    const pieceValues = { 'p': 1, 'n': 3, 'b': 3, 'r': 5, 'q': 9, 'k': 0 };
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j].toLowerCase();
+            if (piece !== ' ') {
+                const value = pieceValues[piece];
+                score += board[i][j] === board[i][j].toUpperCase() ? value : -value;
+            }
+        }
+    }
+    return score * 100; // Prioritize material gain
+}
+
+function evaluateDevelopmentAndCenter(isPlayerTurn) {
+    const centerSquares = [[3,3], [3,4], [4,3], [4,4]];
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j].toLowerCase();
+            if (piece !== ' ' && piece !== 'p' && piece !== 'k') {
+                // Encourage piece development
+                score += (isPlayerTurn ? -1 : 1) * (piece === board[i][j].toUpperCase() ? 1 : -1);
+                
+                // Encourage controlling the center
+                if (centerSquares.some(([x, y]) => x === i && y === j)) {
+                    score += (isPlayerTurn ? -1 : 1) * (piece === board[i][j].toUpperCase() ? 2 : -2);
+                }
+            }
+        }
+    }
+    return score;
+}
+
+function evaluateKingSafety(isPlayerTurn) {
+    // Simplified king safety evaluation
+    const kingPos = findKing(isPlayerTurn);
+    if (!kingPos) return 0;
+
+    let score = 0;
+    const [kx, ky] = kingPos;
+
+    // Penalize king in the center
+    if (kx > 2 && kx < 6 && ky > 1 && ky < 6) {
+        score -= 5;
     }
 
-    const moves = getAllPossibleMoves(isMaximizingPlayer);
-
-    if (isMaximizingPlayer) {
-        let maxEval = -Infinity;
-        for (const move of moves) {
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, false, startTime, timeLimit);
-            board = oldBoard;
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
-            if (beta <= alpha) break;
-        }
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        for (const move of moves) {
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, true, startTime, timeLimit);
-            board = oldBoard;
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
-            if (beta <= alpha) break;
-        }
-        return minEval;
+    // Encourage castling
+    if ((kx === 0 || kx === 7) && (ky === 2 || ky === 6)) {
+        score += 10;
     }
+
+    return score;
+}
+
+function evaluatePawnStructure(isPlayerTurn) {
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        let pawnCount = 0;
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (board[j][i].toLowerCase() === 'p') {
+                pawnCount++;
+                // Penalize doubled pawns
+                if (pawnCount > 1) {
+                    score -= 5;
+                }
+                // Encourage pawn advancement
+                score += (isPlayerTurn ? -1 : 1) * (board[j][i] === 'P' ? j : 7 - j);
+            }
+        }
+    }
+    return score;
+}
+
+function findKing(isPlayerTurn) {
+    const kingPiece = isPlayerTurn ? 'K' : 'k';
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            if (board[i][j] === kingPiece) {
+                return [i, j];
+            }
+        }
+    }
+    return null;
 }
 
 function getAllPossibleMoves(isPlayerMove) {
