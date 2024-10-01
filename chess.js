@@ -124,11 +124,12 @@
         }
 
         // Capture diagonally
-        if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && board[toRank][toFile] !== ' ') {
-            return true;
+        if (Math.abs(toFile - fromFile) === 1 && toRank === fromRank + direction) {
+            const targetPiece = board[toRank][toFile];
+            if (targetPiece !== ' ' && isWhite !== (targetPiece === targetPiece.toUpperCase())) {
+                return true;
+            }
         }
-
-        // TODO: Implement en passant
 
         return false;
     }
@@ -139,8 +140,8 @@
     }
 
     function isValidKnightMove(fromFile, fromRank, toFile, toRank) {
-        const fileDiff = Math.abs(fromFile - toFile);
-        const rankDiff = Math.abs(fromRank - toRank);
+        const fileDiff = Math.abs(toFile - fromFile);
+        const rankDiff = Math.abs(toRank - fromRank);
         return (fileDiff === 1 && rankDiff === 2) || (fileDiff === 2 && rankDiff === 1);
     }
 
