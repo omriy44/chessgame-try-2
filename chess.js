@@ -17,6 +17,19 @@ function initializeBoard() {
     board[1] = Array(8).fill('p');
 }
 
+function createBoardDOM() {
+    const boardElement = document.getElementById('board');
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const square = document.createElement('div');
+            square.id = `${String.fromCharCode(97 + j)}${8 - i}`;
+            square.classList.add('square');
+            square.classList.add((i + j) % 2 === 0 ? 'light' : 'dark');
+            boardElement.appendChild(square);
+        }
+    }
+}
+
 function updateBoard() {
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
@@ -27,71 +40,26 @@ function updateBoard() {
             }
         }
     }
-    const turnElement = document.getElementById('turn');
-    if (turnElement) {
-        turnElement.textContent = isWhiteTurn ? "White's turn" : "Black's turn";
-    }
-}
-
-function isValidMove(move) {
-    const parts = move.split('-');
-    if (parts.length !== 2) return false;
-    
-    const [from, to] = parts;
-    if (!isValidSquare(from) || !isValidSquare(to)) return false;
-    
-    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from.charAt(1))];
-    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to.charAt(1))];
-    
-    const piece = board[fromRank][fromFile];
-    
-    // Check if the piece belongs to the current player
-    if (isWhiteTurn && piece.toLowerCase() === piece) return false;
-    if (!isWhiteTurn && piece.toUpperCase() === piece) return false;
-    
-    // Check if the destination square is empty or contains an opponent's piece
-    const destPiece = board[toRank][toFile];
-    if (isWhiteTurn && destPiece.toUpperCase() === destPiece && destPiece !== ' ') return false;
-    if (!isWhiteTurn && destPiece.toLowerCase() === destPiece && destPiece !== ' ') return false;
-    
-    // Add more specific piece movement rules here if needed
-    
-    return true;
-}
-
-function isValidSquare(square) {
-    if (square.length !== 2) return false;
-    const file = square.charAt(0);
-    const rank = square.charAt(1);
-    return file >= 'a' && file <= 'h' && rank >= '1' && rank <= '8';
-}
-
-function makeMove(move) {
-    const [from, to] = move.split('-');
-    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from.charAt(1))];
-    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to.charAt(1))];
-
-    const piece = board[fromRank][fromFile];
-    board[fromRank][fromFile] = ' ';
-    board[toRank][toFile] = piece;
+    document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
 }
 
 function handleMove() {
     const moveInput = document.getElementById('move');
-    if (moveInput) {
-        const move = moveInput.value.toLowerCase();
-        if (isValidMove(move)) {
-            makeMove(move);
-            isWhiteTurn = !isWhiteTurn;
-            updateBoard();
-            moveInput.value = '';
-        } else {
-            alert('Invalid move. Try again.');
-        }
+    const move = moveInput.value.toLowerCase();
+    if (isValidMove(move)) {
+        makeMove(move);
+        isWhiteTurn = !isWhiteTurn;
+        updateBoard();
+        moveInput.value = '';
+    } else {
+        alert('Invalid move. Try again.');
     }
 }
 
+// Implement isValidMove and makeMove functions here
+
 window.onload = function() {
+    createBoardDOM();
     initializeBoard();
     updateBoard();
 };
