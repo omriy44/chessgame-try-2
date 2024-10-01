@@ -8,15 +8,9 @@ body {
 }
 
 #game-container {
-    text-align: center;
-}
-
-#board-container {
-    display: inline-grid;
-    grid-template-columns: auto auto;
-    grid-template-rows: auto auto;
-    gap: 5px;
-    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #board {
@@ -88,3 +82,18 @@ input, button {
     padding: 5px;
 }
 
+.coordinate {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    background-color: #f0f0f0;
+}
+
+#turn {
+    margin-top: 20px;
+    font-size: 24px;
+    text-align: center;
+}
