@@ -12,6 +12,9 @@ const PIECE_VALUES = {
     'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 100
 };
 
+// Add this global variable at the top of your file
+let moveCount = 0;
+
 function initializeBoard() {
     board = [
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -146,6 +149,7 @@ function makeMove(move) {
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
 
+    moveCount++;
     console.log("Board after move:", JSON.stringify(board));
 }
 
@@ -172,26 +176,11 @@ function undoMove(move) {
 
 function computerMove() {
     console.log("Starting computer move");
-    if (!checkBoardIntegrity()) {
-        console.error("Board integrity check failed. Reinitializing the board.");
-        initializeBoard();
-        updateBoard();
-        return;
-    }
-    console.log("Current board state:", JSON.stringify(board));
+    const possibleMoves = getAllPossibleMoves(false);
+    console.log(`Possible moves: ${possibleMoves.length}`);
 
-    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
-        console.error("Invalid board state. Reinitializing the board.");
-        initializeBoard();
-        updateBoard();
-        return;
-    }
-
-    const allMoves = getAllPossibleMoves(false);
-    console.log("All possible computer moves:", allMoves);
-
-    if (allMoves.length === 0) {
-        console.log("No valid moves found for computer");
+    if (possibleMoves.length === 0) {
+        console.log("No valid moves for computer");
         if (isInCheck(false)) {
             alert("Checkmate! You win!");
         } else {
@@ -200,170 +189,51 @@ function computerMove() {
         return;
     }
 
-    const depth = 3;
-    console.log(`Searching for best move at depth ${depth}`);
-    const bestMove = findBestMove(depth);
-    
-    if (bestMove) {
-        console.log(`Computer's chosen move: ${bestMove}`);
-        makeMove(bestMove);
-        isPlayerTurn = true;
-        updateBoard();
-    } else {
-        console.error("Unexpected: No best move found despite having valid moves");
-        // Fallback to a random move
-        const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
-        console.log(`Falling back to random move: ${randomMove}`);
-        makeMove(randomMove);
-        isPlayerTurn = true;
-        updateBoard();
-    }
+    // Evaluate all moves and sort them
+    const evaluatedMoves = possibleMoves.map(move => ({
+        move: move,
+        score: evaluateMove(move)
+    })).sort((a, b) => b.score - a.score);
+
+    // Choose randomly from the top 3 moves (or fewer if there are less than 3 moves)
+    const topMoves = evaluatedMoves.slice(0, Math.min(3, evaluatedMoves.length));
+    const chosenMove = topMoves[Math.floor(Math.random() * topMoves.length)].move;
+
+    console.log(`Computer chooses move: ${chosenMove}`);
+    makeMove(chosenMove);
+    isPlayerTurn = true;
+    updateBoard();
 }
 
-function findBestMove(depth) {
-    console.log(`Finding best move at depth ${depth}`);
-    let bestMove = null;
-    let bestScore = -Infinity;
-    const moves = getAllPossibleMoves(false);
-    
-    console.log(`Number of possible moves: ${moves.length}`);
+function evaluateMove(move) {
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
-    for (const move of moves) {
-        console.log(`Evaluating move: ${move}`);
-        makeMove(move);
-        const score = minimax(depth - 1, -Infinity, Infinity, true);
-        undoMove(move);
+    const movingPiece = board[fromRank][fromFile];
+    const capturedPiece = board[toRank][toFile];
 
-        console.log(`Move ${move} evaluated with score ${score}`);
-
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
-        }
-    }
-
-    console.log(`Best move found: ${bestMove}`);
-    return bestMove;
-}
-
-function minimax(depth, alpha, beta, isMaximizingPlayer) {
-    console.log(`Minimax called with depth: ${depth}, isMaximizingPlayer: ${isMaximizingPlayer}`);
-    console.log("Current board state:", JSON.stringify(board));
-    
-    if (depth === 0) {
-        return evaluateBoard();
-    }
-
-    const moves = getAllPossibleMoves(isMaximizingPlayer);
-    console.log(`Possible moves at depth ${depth}:`, moves);
-
-    if (moves.length === 0) {
-        console.log("No moves available, returning current evaluation");
-        return evaluateBoard();
-    }
-
-    if (isMaximizingPlayer) {
-        let maxEval = -Infinity;
-        for (const move of moves) {
-            console.log(`Evaluating move: ${move}`);
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, false);
-            undoMove(move);
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        for (const move of moves) {
-            console.log(`Evaluating move: ${move}`);
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, true);
-            undoMove(move);
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        return minEval;
-    }
-}
-
-function evaluateBoard() {
-    console.log("Evaluating board");
-    console.log("Current board state:", JSON.stringify(board));
     let score = 0;
-    for (let i = 0; i < BOARD_SIZE; i++) {
-        for (let j = 0; j < BOARD_SIZE; j++) {
-            const piece = board[i][j];
-            console.log(`Evaluating piece at [${i}, ${j}]: ${piece}`);
-            if (piece && piece !== ' ') {
-                if (PIECE_VALUES[piece] === undefined) {
-                    console.error(`Unknown piece type: ${piece} at [${i}, ${j}]`);
-                    continue;
-                }
-                score += PIECE_VALUES[piece];
-                try {
-                    const posBonus = getPositionalBonus(piece, i, j);
-                    score += posBonus;
-                } catch (error) {
-                    console.error(`Error getting positional bonus for piece ${piece} at [${i}, ${j}]:`, error);
-                }
-            }
-        }
+
+    // Prioritize captures
+    if (capturedPiece !== ' ') {
+        score += PIECE_VALUES[capturedPiece.toUpperCase()];
     }
-    console.log(`Final evaluation score: ${score}`);
+
+    // Prioritize pawn advancement
+    if (movingPiece.toLowerCase() === 'p') {
+        score += (7 - toRank); // More points for advancing further
+    }
+
+    // Slight penalty for moving the same piece multiple times in the opening
+    if (moveCount < 10) {
+        score -= 1;
+    }
+
+    // Random factor to add some variety
+    score += Math.random() * 0.2 - 0.1;
+
     return score;
-}
-
-function getPositionalBonus(piece, rank, file) {
-    console.log(`Getting positional bonus for piece: ${piece} at rank: ${rank}, file: ${file}`);
-    if (piece === undefined || piece === null) {
-        console.error(`Invalid piece at rank ${rank}, file ${file}`);
-        return 0;
-    }
-    if (typeof piece !== 'string' || piece.length !== 1) {
-        console.error(`Unexpected piece format: ${piece} at rank ${rank}, file ${file}`);
-        return 0;
-    }
-
-    const pawnPositionBonus = [
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [50, 50, 50, 50, 50, 50, 50, 50],
-        [10, 10, 20, 30, 30, 20, 10, 10],
-        [5, 5, 10, 25, 25, 10, 5, 5],
-        [0, 0, 0, 20, 20, 0, 0, 0],
-        [5, -5, -10, 0, 0, -10, -5, 5],
-        [5, 10, 10, -20, -20, 10, 10, 5],
-        [0, 0, 0, 0, 0, 0, 0, 0]
-    ];
-
-    const knightPositionBonus = [
-        [-50, -40, -30, -30, -30, -30, -40, -50],
-        [-40, -20, 0, 0, 0, 0, -20, -40],
-        [-30, 0, 10, 15, 15, 10, 0, -30],
-        [-30, 5, 15, 20, 20, 15, 5, -30],
-        [-30, 0, 15, 20, 20, 15, 0, -30],
-        [-30, 5, 10, 15, 15, 10, 5, -30],
-        [-40, -20, 0, 5, 5, 0, -20, -40],
-        [-50, -40, -30, -30, -30, -30, -40, -50]
-    ];
-
-    const pieceType = piece.toLowerCase();
-    const isWhite = piece === piece.toUpperCase();
-
-    switch (pieceType) {
-        case 'p':
-            return isWhite ? pawnPositionBonus[rank][file] : -pawnPositionBonus[7 - rank][file];
-        case 'n':
-            return isWhite ? knightPositionBonus[rank][file] : -knightPositionBonus[7 - rank][file];
-        default:
-            return 0;
-    }
 }
 
 function getAllPossibleMoves(isWhite) {
