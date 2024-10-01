@@ -58,6 +58,8 @@
         const isWhitePiece = piece === piece.toUpperCase();
         if (isWhitePiece !== isWhiteTurn) return false;
 
+        // Add more specific piece movement rules here if needed
+
         return true;
     }
 
@@ -79,7 +81,7 @@
             updateBoard();
             moveInput.value = '';
         } else {
-            alert('Invalid move. Please try again.');
+            alert('Illegal move. Try again.');
         }
     };
 
