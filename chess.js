@@ -140,7 +140,8 @@ function isValidMove(move, isPlayerMove) {
 
     // Check if the piece belongs to the current player
     const isPieceWhite = piece === piece.toUpperCase();
-    if (piece === ' ' || isPieceWhite === isPlayerMove) {
+    console.log(`Is piece white: ${isPieceWhite}, Is player move: ${isPlayerMove}`);
+    if (piece === ' ' || isPieceWhite !== isPlayerMove) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
@@ -150,7 +151,7 @@ function isValidMove(move, isPlayerMove) {
 
     // Check if the target square is empty or contains an opponent's piece
     const isCapture = targetPiece !== ' ';
-    if (isCapture && (targetPiece === targetPiece.toUpperCase()) !== isPieceWhite) {
+    if (isCapture && (targetPiece === targetPiece.toUpperCase()) === isPieceWhite) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
@@ -182,6 +183,8 @@ function isValidMove(move, isPlayerMove) {
             console.log(`Invalid piece type: ${pieceType}`);
             return false;
     }
+
+    console.log(`Is valid ${pieceType} move: ${isValidPieceMove}`);
 
     if (!isValidPieceMove) {
         console.log(`Invalid move for ${pieceType}`);
@@ -367,16 +370,23 @@ function checkBoardIntegrity() {
 }
 
 function isPawnMove(fromRank, fromFile, toRank, toFile, isWhite, isCapture) {
+    console.log(`Checking pawn move: fromRank=${fromRank}, fromFile=${fromFile}, toRank=${toRank}, toFile=${toFile}, isWhite=${isWhite}, isCapture=${isCapture}`);
     const direction = isWhite ? -1 : 1;
     const startRank = isWhite ? 6 : 1;
     
     if (isCapture) {
-        return toRank === fromRank + direction && Math.abs(toFile - fromFile) === 1;
+        const isValidCapture = toRank === fromRank + direction && Math.abs(toFile - fromFile) === 1;
+        console.log(`Is valid pawn capture: ${isValidCapture}`);
+        return isValidCapture;
     } else {
         if (fromRank === startRank && toRank === fromRank + 2 * direction && fromFile === toFile) {
-            return board[fromRank + direction][fromFile] === ' '; // Check if the square in between is empty
+            const isValidDoubleMove = board[fromRank + direction][fromFile] === ' ';
+            console.log(`Is valid pawn double move: ${isValidDoubleMove}`);
+            return isValidDoubleMove;
         }
-        return toRank === fromRank + direction && fromFile === toFile;
+        const isValidSingleMove = toRank === fromRank + direction && fromFile === toFile;
+        console.log(`Is valid pawn single move: ${isValidSingleMove}`);
+        return isValidSingleMove;
     }
 }
 
