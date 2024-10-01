@@ -145,8 +145,7 @@
         const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
         const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
-        board[toRank][toFile] = board[fromRank][fromFile];
-        board[fromRank][fromFile] = ' ';
+        // Move
     }
 
     window.handleMove = function() {
@@ -159,6 +158,7 @@
             moveInput.value = '';
         } else {
             alert('Illegal move. Try again.');
+            moveInput.value = '';  // Clear the input field after an illegal move
         }
     };
 
