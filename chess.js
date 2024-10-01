@@ -98,7 +98,88 @@ function isValidMove(move) {
     const targetPiece = board[toRank][toFile];
     if (targetPiece !== ' ' && targetPiece === targetPiece.toUpperCase()) return false;
 
-    return from !== to;
+    // Piece-specific move validation
+    switch (piece.toLowerCase()) {
+        case 'p': return isValidPawnMove(fromFile, fromRank, toFile, toRank, piece === 'P');
+        case 'r': return isValidRookMove(fromFile, fromRank, toFile, toRank);
+        case 'n': return isValidKnightMove(fromFile, fromRank, toFile, toRank);
+        case 'b': return isValidBishopMove(fromFile, fromRank, toFile, toRank);
+        case 'q': return isValidQueenMove(fromFile, fromRank, toFile, toRank);
+        case 'k': return isValidKingMove(fromFile, fromRank, toFile, toRank);
+        default: return false;
+    }
+}
+
+function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
+    const direction = isWhite ? -1 : 1;
+    const startRank = isWhite ? 6 : 1;
+
+    // Move forward one square
+    if (fromFile === toFile && toRank === fromRank + direction && board[toRank][toFile] === ' ') {
+        return true;
+    }
+
+    // Move forward two squares from starting position
+    if (fromFile === toFile && fromRank === startRank && toRank === fromRank + 2 * direction &&
+        board[fromRank + direction][fromFile] === ' ' && board[toRank][toFile] === ' ') {
+        return true;
+    }
+
+    // Capture diagonally
+    if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && 
+        board[toRank][toFile] !== ' ' && 
+        isWhite !== (board[toRank][toFile] === board[toRank][toFile].toUpperCase())) {
+        return true;
+    }
+
+    return false;
+}
+
+function isValidRookMove(fromFile, fromRank, toFile, toRank) {
+    if (fromFile !== toFile && fromRank !== toRank) return false;
+    return isPathClear(fromFile, fromRank, toFile, toRank);
+}
+
+function isValidKnightMove(fromFile, fromRank, toFile, toRank) {
+    const fileDiff = Math.abs(fromFile - toFile);
+    const rankDiff = Math.abs(fromRank - toRank);
+    return (fileDiff === 1 && rankDiff === 2) || (fileDiff === 2 && rankDiff === 1);
+}
+
+function isValidBishopMove(fromFile, fromRank, toFile, toRank) {
+    if (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank)) return false;
+    return isPathClear(fromFile, fromRank, toFile, toRank);
+}
+
+function isValidQueenMove(fromFile, fromRank, toFile, toRank) {
+    if (fromFile === toFile || fromRank === toRank || Math.abs(fromFile - toFile) === Math.abs(fromRank - toRank)) {
+        return isPathClear(fromFile, fromRank, toFile, toRank);
+    }
+    return false;
+}
+
+function isValidKingMove(fromFile, fromRank, toFile, toRank) {
+    const fileDiff = Math.abs(fromFile - toFile);
+    const rankDiff = Math.abs(fromRank - toRank);
+    return fileDiff <= 1 && rankDiff <= 1;
+}
+
+function isPathClear(fromFile, fromRank, toFile, toRank) {
+    const fileStep = Math.sign(toFile - fromFile);
+    const rankStep = Math.sign(toRank - fromRank);
+
+    let currentFile = fromFile + fileStep;
+    let currentRank = fromRank + rankStep;
+
+    while (currentFile !== toFile || currentRank !== toRank) {
+        if (board[currentRank][currentFile] !== ' ') {
+            return false;
+        }
+        currentFile += fileStep;
+        currentRank += rankStep;
+    }
+
+    return true;
 }
 
 function makeMove(move) {
