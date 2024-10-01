@@ -141,7 +141,7 @@ function isValidMove(move, isPlayerMove) {
     // Check if the piece belongs to the current player
     const isPieceWhite = piece === piece.toUpperCase();
     console.log(`Is piece white: ${isPieceWhite}, Is player move: ${isPlayerMove}`);
-    if (piece === ' ' || isPieceWhite !== isPlayerMove) {
+    if (piece === ' ' || isPieceWhite !== isPlayerMove) { // Changed this condition
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
@@ -380,11 +380,11 @@ function isPawnMove(fromRank, fromFile, toRank, toFile, isWhite, isCapture) {
         return isValidCapture;
     } else {
         if (fromRank === startRank && toRank === fromRank + 2 * direction && fromFile === toFile) {
-            const isValidDoubleMove = board[fromRank + direction][fromFile] === ' ';
+            const isValidDoubleMove = board[fromRank + direction][fromFile] === ' ' && board[toRank][toFile] === ' ';
             console.log(`Is valid pawn double move: ${isValidDoubleMove}`);
             return isValidDoubleMove;
         }
-        const isValidSingleMove = toRank === fromRank + direction && fromFile === toFile;
+        const isValidSingleMove = toRank === fromRank + direction && fromFile === toFile && board[toRank][toFile] === ' ';
         console.log(`Is valid pawn single move: ${isValidSingleMove}`);
         return isValidSingleMove;
     }
