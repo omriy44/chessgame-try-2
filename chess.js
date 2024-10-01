@@ -304,6 +304,8 @@ function orderMoves(moves) {
     });
 }
 
+let isTimeUp = false;
+
 function computerMove() {
     console.log("Starting computer move");
     
@@ -326,15 +328,18 @@ function computerMove() {
         return;
     }
 
+    isTimeUp = false;
+    setTimeout(() => { isTimeUp = true; }, timeLimit);
+
     for (const move of possibleMoves) {
-        if (Date.now() - startTime > timeLimit) {
+        if (isTimeUp) {
             console.log("Time limit reached");
             break;
         }
 
         const oldBoard = JSON.parse(JSON.stringify(board));
         makeMove(move);
-        const score = minimaxWithTimeout(maxDepth - 1, -Infinity, Infinity, true, startTime, timeLimit);
+        const score = minimax(maxDepth - 1, -Infinity, Infinity, true);
         board = oldBoard;
 
         if (score > bestScore) {
@@ -356,12 +361,8 @@ function computerMove() {
     console.log(`Move calculation took ${Date.now() - startTime} ms`);
 }
 
-function minimaxWithTimeout(depth, alpha, beta, isMaximizingPlayer, startTime, timeLimit) {
-    if (Date.now() - startTime > timeLimit) {
-        throw new Error("Timeout");
-    }
-
-    if (depth === 0) {
+function minimax(depth, alpha, beta, isMaximizingPlayer) {
+    if (isTimeUp || depth === 0) {
         return evaluateBoard();
     }
 
@@ -370,9 +371,10 @@ function minimaxWithTimeout(depth, alpha, beta, isMaximizingPlayer, startTime, t
     if (isMaximizingPlayer) {
         let maxEval = -Infinity;
         for (const move of moves) {
+            if (isTimeUp) break;
             const oldBoard = JSON.parse(JSON.stringify(board));
             makeMove(move);
-            const eval = minimaxWithTimeout(depth - 1, alpha, beta, false, startTime, timeLimit);
+            const eval = minimax(depth - 1, alpha, beta, false);
             board = oldBoard;
             maxEval = Math.max(maxEval, eval);
             alpha = Math.max(alpha, eval);
@@ -382,9 +384,10 @@ function minimaxWithTimeout(depth, alpha, beta, isMaximizingPlayer, startTime, t
     } else {
         let minEval = Infinity;
         for (const move of moves) {
+            if (isTimeUp) break;
             const oldBoard = JSON.parse(JSON.stringify(board));
             makeMove(move);
-            const eval = minimaxWithTimeout(depth - 1, alpha, beta, true, startTime, timeLimit);
+            const eval = minimax(depth - 1, alpha, beta, true);
             board = oldBoard;
             minEval = Math.min(minEval, eval);
             beta = Math.min(beta, eval);
