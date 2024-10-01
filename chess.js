@@ -15,6 +15,72 @@ const PIECE_VALUES = {
 // Add this global variable at the top of your file
 let moveCount = 0;
 
+const PAWN_TABLE = [
+    [0,  0,  0,  0,  0,  0,  0,  0],
+    [50, 50, 50, 50, 50, 50, 50, 50],
+    [10, 10, 20, 30, 30, 20, 10, 10],
+    [5,  5, 10, 25, 25, 10,  5,  5],
+    [0,  0,  0, 20, 20,  0,  0,  0],
+    [5, -5,-10,  0,  0,-10, -5,  5],
+    [5, 10, 10,-20,-20, 10, 10,  5],
+    [0,  0,  0,  0,  0,  0,  0,  0]
+];
+
+const KNIGHT_TABLE = [
+    [-50,-40,-30,-30,-30,-30,-40,-50],
+    [-40,-20,  0,  0,  0,  0,-20,-40],
+    [-30,  0, 10, 15, 15, 10,  0,-30],
+    [-30,  5, 15, 20, 20, 15,  5,-30],
+    [-30,  0, 15, 20, 20, 15,  0,-30],
+    [-30,  5, 10, 15, 15, 10,  5,-30],
+    [-40,-20,  0,  5,  5,  0,-20,-40],
+    [-50,-40,-30,-30,-30,-30,-40,-50]
+];
+
+const BISHOP_TABLE = [
+    [-20,-10,-10,-10,-10,-10,-10,-20],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [-10,  0,  5, 10, 10,  5,  0,-10],
+    [-10,  5,  5, 10, 10,  5,  5,-10],
+    [-10,  0, 10, 10, 10, 10,  0,-10],
+    [-10, 10, 10, 10, 10, 10, 10,-10],
+    [-10,  5,  0,  0,  0,  0,  5,-10],
+    [-20,-10,-10,-10,-10,-10,-10,-20]
+];
+
+const ROOK_TABLE = [
+    [0,  0,  0,  0,  0,  0,  0,  0],
+    [5, 10, 10, 10, 10, 10, 10,  5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [-5,  0,  0,  0,  0,  0,  0, -5],
+    [0,  0,  0,  5,  5,  0,  0,  0]
+];
+
+const QUEEN_TABLE = [
+    [-20,-10,-10, -5, -5,-10,-10,-20],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [-10,  0,  5,  5,  5,  5,  0,-10],
+    [-5,  0,  5,  5,  5,  5,  0, -5],
+    [0,  0,  5,  5,  5,  5,  0, -5],
+    [-10,  5,  5,  5,  5,  5,  0,-10],
+    [-10,  0,  5,  0,  0,  0,  0,-10],
+    [-20,-10,-10, -5, -5,-10,-10,-20]
+];
+
+const KING_TABLE = [
+    [-30,-40,-40,-50,-50,-40,-40,-30],
+    [-30,-40,-40,-50,-50,-40,-40,-30],
+    [-30,-40,-40,-50,-50,-40,-40,-30],
+    [-30,-40,-40,-50,-50,-40,-40,-30],
+    [-20,-30,-30,-40,-40,-30,-30,-20],
+    [-10,-20,-20,-20,-20,-20,-20,-10],
+    [20, 20,  0,  0,  0,  0, 20, 20],
+    [20, 30, 10,  0,  0, 10, 30, 20]
+];
+
 function initializeBoard() {
     board = [
         ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
@@ -233,12 +299,6 @@ function undoMove(move) {
 function computerMove() {
     console.log("Starting computer move");
     console.log("Current board state:", JSON.stringify(board));
-    console.log(`Is player turn: ${isPlayerTurn}`);
-
-    if (isPlayerTurn) {
-        console.error("It's not the computer's turn yet. This shouldn't happen.");
-        return;
-    }
 
     const possibleMoves = getAllPossibleMoves(false);
     console.log(`Possible moves: ${possibleMoves.length}`);
@@ -255,11 +315,12 @@ function computerMove() {
 
     let bestMove = null;
     let bestScore = -Infinity;
+    const depth = 3; // Increase this for stronger play, but it will take longer
 
     for (const move of possibleMoves) {
         const oldBoard = JSON.parse(JSON.stringify(board));
         makeMove(move);
-        const score = minimax(2, true); // Adjust the depth as needed
+        const score = minimax(depth - 1, -Infinity, Infinity, true);
         board = oldBoard;
 
         if (score > bestScore) {
@@ -271,7 +332,6 @@ function computerMove() {
     console.log(`Computer chooses move: ${bestMove}`);
     makeMove(bestMove);
     isPlayerTurn = true;
-    console.log("Switching turn to player. isPlayerTurn is now:", isPlayerTurn);
     updateBoard();
 
     console.log("Board after computer move:", JSON.stringify(board));
@@ -444,13 +504,33 @@ function evaluateBoard() {
             const piece = board[i][j];
             if (piece !== ' ') {
                 score += PIECE_VALUES[piece];
+                switch (piece.toLowerCase()) {
+                    case 'p':
+                        score += (piece === 'P' ? PAWN_TABLE[i][j] : -PAWN_TABLE[7-i][j]);
+                        break;
+                    case 'n':
+                        score += (piece === 'N' ? KNIGHT_TABLE[i][j] : -KNIGHT_TABLE[7-i][j]);
+                        break;
+                    case 'b':
+                        score += (piece === 'B' ? BISHOP_TABLE[i][j] : -BISHOP_TABLE[7-i][j]);
+                        break;
+                    case 'r':
+                        score += (piece === 'R' ? ROOK_TABLE[i][j] : -ROOK_TABLE[7-i][j]);
+                        break;
+                    case 'q':
+                        score += (piece === 'Q' ? QUEEN_TABLE[i][j] : -QUEEN_TABLE[7-i][j]);
+                        break;
+                    case 'k':
+                        score += (piece === 'K' ? KING_TABLE[i][j] : -KING_TABLE[7-i][j]);
+                        break;
+                }
             }
         }
     }
     return score;
 }
 
-function minimax(depth, isMaximizingPlayer) {
+function minimax(depth, alpha, beta, isMaximizingPlayer) {
     if (depth === 0) {
         return evaluateBoard();
     }
@@ -461,9 +541,13 @@ function minimax(depth, isMaximizingPlayer) {
         for (const move of moves) {
             const oldBoard = JSON.parse(JSON.stringify(board));
             makeMove(move);
-            const eval = minimax(depth - 1, false);
+            const eval = minimax(depth - 1, alpha, beta, false);
             board = oldBoard;
             maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) {
+                break;
+            }
         }
         return maxEval;
     } else {
@@ -472,9 +556,13 @@ function minimax(depth, isMaximizingPlayer) {
         for (const move of moves) {
             const oldBoard = JSON.parse(JSON.stringify(board));
             makeMove(move);
-            const eval = minimax(depth - 1, true);
+            const eval = minimax(depth - 1, alpha, beta, true);
             board = oldBoard;
             minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) {
+                break;
+            }
         }
         return minEval;
     }
