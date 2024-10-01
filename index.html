@@ -4,46 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chess.css">
 </head>
 <body>
     <div id="game-container">
-        <div id="board">
-            <!-- Chess board squares -->
-            <div id="a8" class="square dark"></div>
-            <div id="b8" class="square light"></div>
-            <div id="c8" class="square dark"></div>
-            <div id="d8" class="square light"></div>
-            <div id="e8" class="square dark"></div>
-            <div id="f8" class="square light"></div>
-            <div id="g8" class="square dark"></div>
-            <div id="h8" class="square light"></div>
-            
-            <div id="a7" class="square light"></div>
-            <div id="b7" class="square dark"></div>
-            <div id="c7" class="square light"></div>
-            <div id="d7" class="square dark"></div>
-            <div id="e7" class="square light"></div>
-            <div id="f7" class="square dark"></div>
-            <div id="g7" class="square light"></div>
-            <div id="h7" class="square dark"></div>
-            
-            <!-- Repeat for ranks 6 through 1 -->
-            
-            <div id="a1" class="square light"></div>
-            <div id="b1" class="square dark"></div>
-            <div id="c1" class="square light"></div>
-            <div id="d1" class="square dark"></div>
-            <div id="e1" class="square light"></div>
-            <div id="f1" class="square dark"></div>
-            <div id="g1" class="square light"></div>
-            <div id="h1" class="square dark"></div>
-        </div>
-        <div id="controls">
-            <p id="turn">White's turn</p>
-            <input type="text" id="move" placeholder="Enter move (e.g., e2-e4)">
-            <button onclick="handleMove()">Make Move</button>
-        </div>
+        <div id="board"></div>
+        <div id="turn"></div>
     </div>
     <script src="chess.js"></script>
 </body>
