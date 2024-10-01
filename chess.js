@@ -106,13 +106,13 @@ function isValidMove(move, isWhite) {
     const piece = board[fromRank][fromFile];
     console.log(`Piece at from position: ${piece}`);
 
-    if (piece === ' ' || (piece === piece.toUpperCase()) !== isWhite) {
+    if (piece === ' ' || (piece === piece.toUpperCase()) === isWhite) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
 
     const targetPiece = board[toRank][toFile];
-    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) === isWhite) {
+    if (targetPiece !== ' ' && (targetPiece === targetPiece.toUpperCase()) !== isWhite) {
         console.log(`Invalid move: Cannot capture own piece at ${to}`);
         return false;
     }
@@ -309,14 +309,16 @@ function getAllPossibleMoves(isWhite) {
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece !== ' ' && (piece === piece.toUpperCase()) === isWhite) {
+            if (piece !== ' ' && (piece === piece.toUpperCase()) !== isWhite) {
                 const from = `${String.fromCharCode(97 + j)}${8 - i}`;
                 for (let x = 0; x < BOARD_SIZE; x++) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
                         const to = `${String.fromCharCode(97 + y)}${8 - x}`;
                         const move = `${from}-${to}`;
                         console.log(`Checking move: ${move} for piece ${piece}`);
-                        if (isValidMove(move, isWhite)) {
+                        const isValid = isValidMove(move, isWhite);
+                        console.log(`Is move ${move} valid? ${isValid}`);
+                        if (isValid) {
                             moves.push(move);
                             console.log(`Valid move found: ${move}`);
                         }
