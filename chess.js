@@ -30,6 +30,8 @@ function createBoardDOM() {
             square.id = `${String.fromCharCode(97 + j)}${8 - i}`;
             square.classList.add('square');
             square.classList.add((i + j) % 2 === 0 ? 'light' : 'dark');
+            square.addEventListener('dragover', allowDrop);
+            square.addEventListener('drop', drop);
             boardElement.appendChild(square);
         }
     }
@@ -43,7 +45,16 @@ function updateBoard() {
             const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
             const square = document.getElementById(squareId);
             if (square) {
-                square.textContent = PIECES[board[i][j]] || '';
+                square.innerHTML = '';
+                const piece = board[i][j];
+                if (piece !== ' ') {
+                    const pieceElement = document.createElement('div');
+                    pieceElement.classList.add('piece');
+                    pieceElement.textContent = PIECES[piece];
+                    pieceElement.draggable = true;
+                    pieceElement.addEventListener('dragstart', drag);
+                    square.appendChild(pieceElement);
+                }
                 square.style.backgroundColor = ''; // Reset background color
             }
         }
@@ -59,6 +70,37 @@ function updateBoard() {
     }
 
     console.log("Board updated");
+}
+
+function drag(event) {
+    event.dataTransfer.setData("text", event.target.parentNode.id);
+}
+
+function allowDrop(event) {
+    event.preventDefault();
+}
+
+function drop(event) {
+    event.preventDefault();
+    const fromSquareId = event.dataTransfer.getData("text");
+    const toSquareId = event.target.closest('.square').id;
+    const move = `${fromSquareId}-${toSquareId}`;
+    
+    if (isValidMove(move)) {
+        makeMove(move);
+        isWhiteTurn = !isWhiteTurn;
+        updateBoard();
+        
+        if (isInCheck(!isWhiteTurn)) {
+            alert(isWhiteTurn ? "Black is in check!" : "White is in check!");
+        }
+    } else {
+        if (isInCheck(isWhiteTurn)) {
+            alert('Illegal move. You must move out of check.');
+        } else {
+            alert('Illegal move. Try again.');
+        }
+    }
 }
 
 function isValidMove(move, checkForCheck = true) {
@@ -268,32 +310,6 @@ function makeMove(move) {
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
 }
-
-window.handleMove = function() {
-    const moveInput = document.getElementById('move');
-    const move = moveInput.value.toLowerCase();
-    console.log(`Attempting move: ${move}`);
-
-    if (isValidMove(move)) {
-        makeMove(move);
-        isWhiteTurn = !isWhiteTurn;
-        updateBoard();
-        moveInput.value = '';
-        console.log("Move made successfully");
-        
-        if (isInCheck(!isWhiteTurn)) {
-            alert(isWhiteTurn ? "Black is in check!" : "White is in check!");
-        }
-    } else {
-        if (isInCheck(isWhiteTurn)) {
-            alert('Illegal move. You must move out of check.');
-        } else {
-            alert('Illegal move. Try again.');
-        }
-        moveInput.value = '';
-        console.log("Illegal move attempted");
-    }
-};
 
 window.onload = function() {
     createBoardDOM();
