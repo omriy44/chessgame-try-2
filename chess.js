@@ -296,14 +296,20 @@ function undoMove(move) {
     console.log("Board after undo:", JSON.stringify(board));
 }
 
+function orderMoves(moves) {
+    return moves.sort((a, b) => {
+        const pieceA = board[8 - parseInt(a[1])][a.charCodeAt(0) - 97];
+        const pieceB = board[8 - parseInt(b[1])][b.charCodeAt(0) - 97];
+        return PIECE_VALUES[pieceB] - PIECE_VALUES[pieceA];
+    });
+}
+
 function computerMove() {
     console.log("Starting computer move");
-    console.log("Current board state:", JSON.stringify(board));
+    
+    const bestMove = iterativeDeepening(5000); // 5 seconds time limit
 
-    const possibleMoves = getAllPossibleMoves(false);
-    console.log(`Possible moves: ${possibleMoves.length}`);
-
-    if (possibleMoves.length === 0) {
+    if (!bestMove) {
         console.log("No valid moves for computer");
         if (isInCheck(false)) {
             alert("Checkmate! You win!");
@@ -313,9 +319,34 @@ function computerMove() {
         return;
     }
 
+    console.log(`Computer chooses move: ${bestMove}`);
+    makeMove(bestMove);
+    isPlayerTurn = true;
+    updateBoard();
+}
+
+function iterativeDeepening(maxTime) {
+    const startTime = Date.now();
+    let bestMove = null;
+    let depth = 1;
+
+    while (Date.now() - startTime < maxTime) {
+        const result = searchAtDepth(depth);
+        if (result) {
+            bestMove = result;
+        } else {
+            break;
+        }
+        depth++;
+    }
+
+    return bestMove;
+}
+
+function searchAtDepth(depth) {
+    const possibleMoves = orderMoves(getAllPossibleMoves(false));
     let bestMove = null;
     let bestScore = -Infinity;
-    const depth = 3; // Increase this for stronger play, but it will take longer
 
     for (const move of possibleMoves) {
         const oldBoard = JSON.parse(JSON.stringify(board));
@@ -329,13 +360,7 @@ function computerMove() {
         }
     }
 
-    console.log(`Computer chooses move: ${bestMove}`);
-    makeMove(bestMove);
-    isPlayerTurn = true;
-    updateBoard();
-
-    console.log("Board after computer move:", JSON.stringify(board));
-    console.log("Waiting for player's move...");
+    return bestMove;
 }
 
 function getAllPossibleMoves(isPlayerMove) {
@@ -530,9 +555,23 @@ function evaluateBoard() {
     return score;
 }
 
+const transpositionTable = new Map();
+
+function boardToString() {
+    return board.map(row => row.join('')).join('');
+}
+
 function minimax(depth, alpha, beta, isMaximizingPlayer) {
+    const boardString = boardToString();
+    const tableEntry = transpositionTable.get(boardString);
+    if (tableEntry && tableEntry.depth >= depth) {
+        return tableEntry.score;
+    }
+
     if (depth === 0) {
-        return evaluateBoard();
+        const score = evaluateBoard();
+        transpositionTable.set(boardString, { score, depth });
+        return score;
     }
 
     if (isMaximizingPlayer) {
@@ -549,6 +588,7 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
                 break;
             }
         }
+        transpositionTable.set(boardString, { score: maxEval, depth });
         return maxEval;
     } else {
         let minEval = Infinity;
@@ -564,6 +604,7 @@ function minimax(depth, alpha, beta, isMaximizingPlayer) {
                 break;
             }
         }
+        transpositionTable.set(boardString, { score: minEval, depth });
         return minEval;
     }
 }
