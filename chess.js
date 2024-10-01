@@ -1,4 +1,5 @@
 const BOARD_SIZE = 8;
+const BOARD_SIZE = 8;
 let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
 let isWhiteTurn = true;
 
@@ -89,4 +90,3 @@ window.onload = function() {
     initializeBoard();
     updateBoard();
 };
-
