@@ -311,10 +311,6 @@ function computerMove() {
     
     const startTime = Date.now();
     const timeLimit = 3000; // 3 seconds time limit
-    const maxDepth = 3; // Maximum depth to search
-
-    let bestMove = null;
-    let bestScore = -Infinity;
 
     const possibleMoves = getAllPossibleMoves(false);
     
@@ -328,18 +324,18 @@ function computerMove() {
         return;
     }
 
-    isTimeUp = false;
-    setTimeout(() => { isTimeUp = true; }, timeLimit);
+    let bestMove = null;
+    let bestScore = -Infinity;
 
     for (const move of possibleMoves) {
-        if (isTimeUp) {
+        if (Date.now() - startTime > timeLimit) {
             console.log("Time limit reached");
             break;
         }
 
         const oldBoard = JSON.parse(JSON.stringify(board));
         makeMove(move);
-        const score = minimax(maxDepth - 1, -Infinity, Infinity, true);
+        const score = evaluateBoard();
         board = oldBoard;
 
         if (score > bestScore) {
@@ -350,7 +346,7 @@ function computerMove() {
 
     if (!bestMove) {
         bestMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        console.log("Choosing random move due to timeout");
+        console.log("Choosing random move");
     }
 
     console.log(`Computer chooses move: ${bestMove}`);
@@ -359,42 +355,6 @@ function computerMove() {
     updateBoard();
 
     console.log(`Move calculation took ${Date.now() - startTime} ms`);
-}
-
-function minimax(depth, alpha, beta, isMaximizingPlayer) {
-    if (isTimeUp || depth === 0) {
-        return evaluateBoard();
-    }
-
-    const moves = getAllPossibleMoves(isMaximizingPlayer);
-
-    if (isMaximizingPlayer) {
-        let maxEval = -Infinity;
-        for (const move of moves) {
-            if (isTimeUp) break;
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, false);
-            board = oldBoard;
-            maxEval = Math.max(maxEval, eval);
-            alpha = Math.max(alpha, eval);
-            if (beta <= alpha) break;
-        }
-        return maxEval;
-    } else {
-        let minEval = Infinity;
-        for (const move of moves) {
-            if (isTimeUp) break;
-            const oldBoard = JSON.parse(JSON.stringify(board));
-            makeMove(move);
-            const eval = minimax(depth - 1, alpha, beta, true);
-            board = oldBoard;
-            minEval = Math.min(minEval, eval);
-            beta = Math.min(beta, eval);
-            if (beta <= alpha) break;
-        }
-        return minEval;
-    }
 }
 
 function getAllPossibleMoves(isPlayerMove) {
@@ -562,7 +522,30 @@ function evaluateBoard() {
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
             if (piece !== ' ') {
-                score += PIECE_VALUES[piece];
+                // Material score
+                score += PIECE_VALUES[piece] * (piece.toUpperCase() === piece ? 1 : -1);
+                
+                // Position score
+                switch (piece.toLowerCase()) {
+                    case 'p':
+                        score += (piece === 'P' ? PAWN_TABLE[i][j] : -PAWN_TABLE[7-i][j]) * 0.1;
+                        break;
+                    case 'n':
+                        score += (piece === 'N' ? KNIGHT_TABLE[i][j] : -KNIGHT_TABLE[7-i][j]) * 0.1;
+                        break;
+                    case 'b':
+                        score += (piece === 'B' ? BISHOP_TABLE[i][j] : -BISHOP_TABLE[7-i][j]) * 0.1;
+                        break;
+                    case 'r':
+                        score += (piece === 'R' ? ROOK_TABLE[i][j] : -ROOK_TABLE[7-i][j]) * 0.1;
+                        break;
+                    case 'q':
+                        score += (piece === 'Q' ? QUEEN_TABLE[i][j] : -QUEEN_TABLE[7-i][j]) * 0.1;
+                        break;
+                    case 'k':
+                        score += (piece === 'K' ? KING_TABLE[i][j] : -KING_TABLE[7-i][j]) * 0.1;
+                        break;
+                }
             }
         }
     }
