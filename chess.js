@@ -80,8 +80,38 @@ function isValidMove(move) {
         return false;
     }
 
+    const targetPiece = board[toRank][toFile];
+    if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) {
+        console.log("Cannot capture own piece");
+        return false;
+    }
+
+    // Check if the path is clear (except for knights)
+    if (piece.toLowerCase() !== 'n' && !isPathClear(fromFile, fromRank, toFile, toRank)) {
+        console.log("Path is not clear");
+        return false;
+    }
+
     // For now, allow any move that meets the above criteria
     console.log("Move is valid");
+    return true;
+}
+
+function isPathClear(fromFile, fromRank, toFile, toRank) {
+    const fileStep = Math.sign(toFile - fromFile);
+    const rankStep = Math.sign(toRank - fromRank);
+
+    let currentFile = fromFile + fileStep;
+    let currentRank = fromRank + rankStep;
+
+    while (currentFile !== toFile || currentRank !== toRank) {
+        if (board[currentRank][currentFile] !== ' ') {
+            return false;
+        }
+        currentFile += fileStep;
+        currentRank += rankStep;
+    }
+
     return true;
 }
 
