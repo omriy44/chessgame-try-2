@@ -43,23 +43,45 @@
     }
 
     function isValidMove(move) {
+        console.log("Checking move:", move);
         const [from, to] = move.split('-');
-        if (!from || !to || from.length !== 2 || to.length !== 2) return false;
+        if (!from || !to || from.length !== 2 || to.length !== 2) {
+            console.log("Invalid move format");
+            return false;
+        }
 
         const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
         const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+        console.log("From:", fromFile, fromRank, "To:", toFile, toRank);
+
         if (fromFile < 0 || fromFile > 7 || fromRank < 0 || fromRank > 7 ||
-            toFile < 0 || toFile > 7 || toRank < 0 || toRank > 7) return false;
+            toFile < 0 || toFile > 7 || toRank < 0 || toRank > 7) {
+            console.log("Out of board bounds");
+            return false;
+        }
 
         const piece = board[fromRank][fromFile];
-        if (piece === ' ') return false;
+        console.log("Piece:", piece);
+
+        if (piece === ' ') {
+            console.log("No piece at start position");
+            return false;
+        }
 
         const isWhitePiece = piece === piece.toUpperCase();
-        if (isWhitePiece !== isWhiteTurn) return false;
+        console.log("Is white piece:", isWhitePiece, "Is white turn:", isWhiteTurn);
+
+        if (isWhitePiece !== isWhiteTurn) {
+            console.log("Wrong color piece for current turn");
+            return false;
+        }
 
         const targetPiece = board[toRank][toFile];
-        if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) return false;
+        if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) {
+            console.log("Cannot capture own piece");
+            return false;
+        }
 
         switch (piece.toLowerCase()) {
             case 'p': return isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece);
