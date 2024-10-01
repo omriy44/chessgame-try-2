@@ -102,17 +102,15 @@ function drop(event) {
     console.log(`Player attempting move: ${move}`);
     console.log("Board state before move:", JSON.stringify(board));
 
-    if (isValidMove(move, true)) {
+    if (isValidMove(move, true)) { // Changed to true here
         makeMove(move);
         console.log("Board state after player move:", JSON.stringify(board));
         
-        // Update isPlayerTurn before calling computerMove
         isPlayerTurn = false;
         console.log("Switching turn to computer. isPlayerTurn is now:", isPlayerTurn);
         
         updateBoard();
         
-        // Call computerMove after a short delay
         setTimeout(() => {
             computerMove();
         }, 100);
@@ -141,7 +139,7 @@ function isValidMove(move, isPlayerMove) {
     // Check if the piece belongs to the current player
     const isPieceWhite = piece === piece.toUpperCase();
     console.log(`Is piece white: ${isPieceWhite}, Is player move: ${isPlayerMove}`);
-    if (piece === ' ' || isPieceWhite !== isPlayerMove) { // Changed this condition
+    if (piece === ' ' || isPieceWhite !== isPlayerMove) {
         console.log(`Invalid move: No piece or wrong color at ${from}`);
         return false;
     }
