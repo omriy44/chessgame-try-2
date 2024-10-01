@@ -1,6 +1,6 @@
 const BOARD_SIZE = 8;
 let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(' '));
-let isWhiteTurn = true;
+let isPlayerTurn = true;
 
 const PIECES = {
     'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
@@ -81,23 +81,20 @@ function updateBoard() {
                     const pieceElement = document.createElement('div');
                     pieceElement.classList.add('piece');
                     pieceElement.textContent = PIECES[piece];
-                    pieceElement.draggable = true;
+                    pieceElement.draggable = piece === piece.toUpperCase();
                     pieceElement.addEventListener('dragstart', drag);
                     square.appendChild(pieceElement);
                 }
             }
         }
     }
-    document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
+    document.getElementById('turn').textContent = isPlayerTurn ? "Your turn" : "Computer's turn";
     debug("Board updated");
 }
 
 function drag(event) {
-    const piece = event.target.textContent;
-    const isWhitePiece = piece === PIECES[piece.toUpperCase()];
-    if (isWhitePiece !== isWhiteTurn) {
+    if (!isPlayerTurn) {
         event.preventDefault();
-        alert("It's not your turn!");
         return false;
     }
     event.dataTransfer.setData("text", event.target.parentNode.id);
@@ -109,14 +106,17 @@ function allowDrop(event) {
 
 function drop(event) {
     event.preventDefault();
+    if (!isPlayerTurn) return;
+
     const fromSquareId = event.dataTransfer.getData("text");
     const toSquareId = event.target.closest('.square').id;
     const move = `${fromSquareId}-${toSquareId}`;
     
     if (isValidMove(move)) {
         makeMove(move);
-        isWhiteTurn = !isWhiteTurn;
+        isPlayerTurn = false;
         updateBoard();
+        setTimeout(computerMove, 500);
     } else {
         debug("Invalid move");
         alert("Invalid move. Please try again.");
@@ -129,95 +129,12 @@ function isValidMove(move) {
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
     const piece = board[fromRank][fromFile];
-    if (piece === ' ') return false;
-
-    const isWhitePiece = piece === piece.toUpperCase();
-    if (isWhitePiece !== isWhiteTurn) return false;
+    if (piece === ' ' || piece !== piece.toUpperCase()) return false;
 
     const targetPiece = board[toRank][toFile];
-    if (targetPiece !== ' ' && isWhitePiece === (targetPiece === targetPiece.toUpperCase())) return false;
+    if (targetPiece !== ' ' && targetPiece === targetPiece.toUpperCase()) return false;
 
-    // Piece-specific move validation
-    switch (piece.toLowerCase()) {
-        case 'p': return isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhitePiece);
-        case 'r': return isValidRookMove(fromFile, fromRank, toFile, toRank);
-        case 'n': return isValidKnightMove(fromFile, fromRank, toFile, toRank);
-        case 'b': return isValidBishopMove(fromFile, fromRank, toFile, toRank);
-        case 'q': return isValidQueenMove(fromFile, fromRank, toFile, toRank);
-        case 'k': return isValidKingMove(fromFile, fromRank, toFile, toRank);
-        default: return false;
-    }
-}
-
-function isValidPawnMove(fromFile, fromRank, toFile, toRank, isWhite) {
-    const direction = isWhite ? -1 : 1;
-    const startRank = isWhite ? 6 : 1;
-
-    // Move forward one square
-    if (fromFile === toFile && toRank === fromRank + direction && board[toRank][toFile] === ' ') {
-        return true;
-    }
-
-    // Move forward two squares from starting position
-    if (fromFile === toFile && fromRank === startRank && toRank === fromRank + 2 * direction &&
-        board[fromRank + direction][fromFile] === ' ' && board[toRank][toFile] === ' ') {
-        return true;
-    }
-
-    // Capture diagonally
-    if (Math.abs(fromFile - toFile) === 1 && toRank === fromRank + direction && 
-        board[toRank][toFile] !== ' ' && 
-        isWhite !== (board[toRank][toFile] === board[toRank][toFile].toUpperCase())) {
-        return true;
-    }
-
-    return false;
-}
-
-function isValidRookMove(fromFile, fromRank, toFile, toRank) {
-    if (fromFile !== toFile && fromRank !== toRank) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidKnightMove(fromFile, fromRank, toFile, toRank) {
-    const fileDiff = Math.abs(fromFile - toFile);
-    const rankDiff = Math.abs(fromRank - toRank);
-    return (fileDiff === 1 && rankDiff === 2) || (fileDiff === 2 && rankDiff === 1);
-}
-
-function isValidBishopMove(fromFile, fromRank, toFile, toRank) {
-    if (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank)) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidQueenMove(fromFile, fromRank, toFile, toRank) {
-    if ((fromFile !== toFile && fromRank !== toRank) && 
-        (Math.abs(fromFile - toFile) !== Math.abs(fromRank - toRank))) return false;
-    return isPathClear(fromFile, fromRank, toFile, toRank);
-}
-
-function isValidKingMove(fromFile, fromRank, toFile, toRank) {
-    const fileDiff = Math.abs(fromFile - toFile);
-    const rankDiff = Math.abs(fromRank - toRank);
-    return fileDiff <= 1 && rankDiff <= 1;
-}
-
-function isPathClear(fromFile, fromRank, toFile, toRank) {
-    const fileStep = Math.sign(toFile - fromFile);
-    const rankStep = Math.sign(toRank - fromRank);
-
-    let currentFile = fromFile + fileStep;
-    let currentRank = fromRank + rankStep;
-
-    while (currentFile !== toFile || currentRank !== toRank) {
-        if (board[currentRank][currentFile] !== ' ') {
-            return false;
-        }
-        currentFile += fileStep;
-        currentRank += rankStep;
-    }
-
-    return true;
+    return from !== to;
 }
 
 function makeMove(move) {
@@ -225,9 +142,122 @@ function makeMove(move) {
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+    const capturedPiece = board[toRank][toFile];
     board[toRank][toFile] = board[fromRank][fromFile];
     board[fromRank][fromFile] = ' ';
-    debug(`Move made: ${move}`);
+    return capturedPiece;
+}
+
+function computerMove() {
+    const depth = 3; // Adjust this for different difficulty levels
+    const bestMove = findBestMove(depth);
+    if (bestMove) {
+        makeMove(bestMove);
+        isPlayerTurn = true;
+        updateBoard();
+    } else {
+        alert("Game over. No more moves for the computer.");
+    }
+}
+
+function findBestMove(depth) {
+    let bestScore = -Infinity;
+    let bestMove = null;
+    const moves = getAllPossibleMoves(false);
+    
+    for (const move of moves) {
+        makeMove(move);
+        const score = minimax(depth - 1, false, -Infinity, Infinity);
+        undoMove(move);
+        
+        if (score > bestScore) {
+            bestScore = score;
+            bestMove = move;
+        }
+    }
+    
+    return bestMove;
+}
+
+function minimax(depth, isMaximizingPlayer, alpha, beta) {
+    if (depth === 0) {
+        return evaluateBoard();
+    }
+    
+    const moves = getAllPossibleMoves(isMaximizingPlayer);
+    
+    if (isMaximizingPlayer) {
+        let maxEval = -Infinity;
+        for (const move of moves) {
+            makeMove(move);
+            const eval = minimax(depth - 1, false, alpha, beta);
+            undoMove(move);
+            maxEval = Math.max(maxEval, eval);
+            alpha = Math.max(alpha, eval);
+            if (beta <= alpha) break;
+        }
+        return maxEval;
+    } else {
+        let minEval = Infinity;
+        for (const move of moves) {
+            makeMove(move);
+            const eval = minimax(depth - 1, true, alpha, beta);
+            undoMove(move);
+            minEval = Math.min(minEval, eval);
+            beta = Math.min(beta, eval);
+            if (beta <= alpha) break;
+        }
+        return minEval;
+    }
+}
+
+function evaluateBoard() {
+    const pieceValues = {
+        'p': -1, 'n': -3, 'b': -3, 'r': -5, 'q': -9, 'k': -100,
+        'P': 1, 'N': 3, 'B': 3, 'R': 5, 'Q': 9, 'K': 100
+    };
+    
+    let score = 0;
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j];
+            if (piece !== ' ') {
+                score += pieceValues[piece];
+            }
+        }
+    }
+    return score;
+}
+
+function undoMove(move) {
+    const [from, to] = move.split('-');
+    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
+    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
+
+    board[fromRank][fromFile] = board[toRank][toFile];
+    board[toRank][toFile] = ' ';
+}
+
+function getAllPossibleMoves(isWhite) {
+    const moves = [];
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        for (let j = 0; j < BOARD_SIZE; j++) {
+            const piece = board[i][j];
+            if (piece !== ' ' && (piece === piece.toUpperCase()) === isWhite) {
+                const from = `${String.fromCharCode(97 + j)}${8 - i}`;
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    for (let y = 0; y < BOARD_SIZE; y++) {
+                        const to = `${String.fromCharCode(97 + y)}${8 - x}`;
+                        const move = `${from}-${to}`;
+                        if (isValidMove(move)) {
+                            moves.push(move);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return moves;
 }
 
 window.onload = function() {
