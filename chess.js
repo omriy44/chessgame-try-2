@@ -94,13 +94,21 @@ function drop(event) {
 }
 
 function isValidMove(move) {
-    console.log("Checking move:", move);
     const [from, to] = move.split('-');
     const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
     const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
+    if (fromFile < 0 || fromFile >= BOARD_SIZE || fromRank < 0 || fromRank >= BOARD_SIZE ||
+        toFile < 0 || toFile >= BOARD_SIZE || toRank < 0 || toRank >= BOARD_SIZE) {
+        console.error(`Invalid move: ${move} - Out of bounds`);
+        return false;
+    }
+
     const piece = board[fromRank][fromFile];
-    console.log("Piece:", piece);
+    if (!piece || piece === ' ') {
+        console.error(`Invalid move: ${move} - No piece at start position`);
+        return false;
+    }
 
     if (piece === ' ' || piece !== piece.toUpperCase()) return false;
 
@@ -203,6 +211,9 @@ function makeMove(move) {
 }
 
 function computerMove() {
+    console.log("Starting computer move");
+    logBoard();
+
     if (!isBoardValid()) {
         console.error("Invalid board state. Reinitializing the board.");
         initializeBoard();
@@ -211,12 +222,16 @@ function computerMove() {
     }
     
     const depth = 3;
+    console.log(`Searching for best move at depth ${depth}`);
     const bestMove = findBestMove(depth);
+    
     if (bestMove) {
+        logMove(bestMove, "Computer's chosen move");
         makeMove(bestMove);
         isPlayerTurn = true;
         updateBoard();
     } else {
+        console.log("No valid moves found for computer");
         if (isInCheck(false)) {
             alert("Checkmate! You win!");
         } else {
@@ -226,14 +241,20 @@ function computerMove() {
 }
 
 function findBestMove(depth) {
+    console.log(`Finding best move at depth ${depth}`);
     let bestMove = null;
     let bestScore = -Infinity;
     const moves = getAllPossibleMoves(false);
+    
+    console.log(`Number of possible moves: ${moves.length}`);
 
     for (const move of moves) {
+        logMove(move, "Evaluating move");
         makeMove(move);
         const score = minimax(depth - 1, -Infinity, Infinity, true);
         undoMove(move);
+
+        console.log(`Move ${move} evaluated with score ${score}`);
 
         if (score > bestScore) {
             bestScore = score;
@@ -241,6 +262,7 @@ function findBestMove(depth) {
         }
     }
 
+    logMove(bestMove, "Best move found");
     return bestMove;
 }
 
@@ -339,19 +361,20 @@ function undoMove(move, capturedPiece) {
 }
 
 function getAllPossibleMoves(isWhite) {
+    console.log(`Getting all possible moves for ${isWhite ? 'white' : 'black'}`);
     const moves = [];
-    if (!Array.isArray(board) || board.length !== BOARD_SIZE) {
-        console.error("Invalid board state");
+    if (!isBoardValid()) {
+        console.error("Invalid board state in getAllPossibleMoves");
         return moves;
     }
     for (let i = 0; i < BOARD_SIZE; i++) {
-        if (!Array.isArray(board[i]) || board[i].length !== BOARD_SIZE) {
-            console.error(`Invalid board row at index ${i}`);
-            continue;
-        }
         for (let j = 0; j < BOARD_SIZE; j++) {
             const piece = board[i][j];
-            if (piece && piece !== ' ' && (piece.toUpperCase() === piece) === isWhite) {
+            if (!piece) {
+                console.error(`Undefined piece at position [${i}, ${j}]`);
+                continue;
+            }
+            if (piece !== ' ' && (piece.toUpperCase() === piece) === isWhite) {
                 const from = `${String.fromCharCode(97 + j)}${8 - i}`;
                 for (let x = 0; x < BOARD_SIZE; x++) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
@@ -365,6 +388,7 @@ function getAllPossibleMoves(isWhite) {
             }
         }
     }
+    console.log(`Found ${moves.length} possible moves`);
     return moves;
 }
 
@@ -410,6 +434,18 @@ function isBoardValid() {
         }
     }
     return true;
+}
+
+// Add these logging functions at the top of your chess.js file
+function logBoard() {
+    console.log("Current board state:");
+    for (let i = 0; i < BOARD_SIZE; i++) {
+        console.log(board[i].join(' '));
+    }
+}
+
+function logMove(move, message) {
+    console.log(`${message}: ${move}`);
 }
 
 window.onload = function() {
