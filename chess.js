@@ -85,71 +85,6 @@ function isValidMove(move) {
     return true;
 }
 
-// ... (keep your existing piece movement validation functions)
-
-function isInCheck(isWhiteKing) {
-    console.log(`Checking if ${isWhiteKing ? 'white' : 'black'} king is in check`);
-    // Find the king's position
-    let kingFile, kingRank;
-    const kingPiece = isWhiteKing ? 'K' : 'k';
-    for (let rank = 0; rank < BOARD_SIZE; rank++) {
-        for (let file = 0; file < BOARD_SIZE; file++) {
-            if (board[rank][file] === kingPiece) {
-                kingFile = file;
-                kingRank = rank;
-                break;
-            }
-        }
-        if (kingFile !== undefined) break;
-    }
-
-    // Check if any opponent's piece can attack the king
-    for (let rank = 0; rank < BOARD_SIZE; rank++) {
-        for (let file = 0; file < BOARD_SIZE; file++) {
-            const piece = board[rank][file];
-            if (piece !== ' ' && isWhiteKing !== (piece === piece.toUpperCase())) {
-                if (isValidMove(`${String.fromCharCode(97 + file)}${8 - rank}-${String.fromCharCode(97 + kingFile)}${8 - kingRank}`)) {
-                    console.log(`King is in check by piece at ${String.fromCharCode(97 + file)}${8 - rank}`);
-                    return true;
-                }
-            }
-        }
-    }
-    console.log("King is not in check");
-    return false;
-}
-
-function highlightKingInCheck(isWhiteKing) {
-    console.log(`Highlighting ${isWhiteKing ? 'white' : 'black'} king`);
-    const kingPiece = isWhiteKing ? 'K' : 'k';
-    for (let rank = 0; rank < BOARD_SIZE; rank++) {
-        for (let file = 0; file < BOARD_SIZE; file++) {
-            if (board[rank][file] === kingPiece) {
-                const squareId = `${String.fromCharCode(97 + file)}${8 - rank}`;
-                const square = document.getElementById(squareId);
-                if (square) {
-                    square.style.backgroundColor = 'red';
-                    console.log(`King square ${squareId} highlighted`);
-                }
-                return;
-            }
-        }
-    }
-}
-
-function clearHighlights() {
-    console.log("Clearing highlights");
-    for (let rank = 0; rank < BOARD_SIZE; rank++) {
-        for (let file = 0; file < BOARD_SIZE; file++) {
-            const squareId = `${String.fromCharCode(97 + file)}${8 - rank}`;
-            const square = document.getElementById(squareId);
-            if (square) {
-                square.style.backgroundColor = '';
-            }
-        }
-    }
-}
-
 function makeMove(move) {
     console.log(`Making move: ${move}`);
     const [from, to] = move.split('-');
@@ -164,27 +99,16 @@ window.handleMove = function() {
     const moveInput = document.getElementById('move');
     const move = moveInput.value.toLowerCase();
     console.log(`Attempting move: ${move}`);
-    if (isValidMove(move, isCurrentPlayerInCheck)) {
+    if (isValidMove(move)) {
         makeMove(move);
         isWhiteTurn = !isWhiteTurn;
-        clearHighlights();
         updateBoard();
         moveInput.value = '';
         console.log("Move made successfully");
-        
-        isCurrentPlayerInCheck = isInCheck(isWhiteTurn);
-        if (isCurrentPlayerInCheck) {
-            highlightKingInCheck(isWhiteTurn);
-            alert(isWhiteTurn ? "White is in check!" : "Black is in check!");
-        }
     } else {
-        console.log("Move is invalid");
-        if (isCurrentPlayerInCheck) {
-            alert('Illegal move. You must move out of check.');
-        } else {
-            alert('Illegal move. Try again.');
-        }
+        alert('Illegal move. Try again.');
         moveInput.value = '';
+        console.log("Illegal move attempted");
     }
 };
 
