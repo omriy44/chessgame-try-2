@@ -20,6 +20,7 @@
             ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
         ];
         console.log("Initial board state:", board);
+        logBoardState();
     }
 
     function createBoardDOM() {
@@ -37,16 +38,22 @@
     }
 
     function updateBoard() {
+        console.log("Updating board...");
         for (let i = 0; i < BOARD_SIZE; i++) {
             for (let j = 0; j < BOARD_SIZE; j++) {
                 const squareId = `${String.fromCharCode(97 + j)}${8 - i}`;
                 const square = document.getElementById(squareId);
                 if (square) {
-                    square.textContent = PIECES[board[i][j]] || '';
+                    const piece = board[i][j];
+                    square.textContent = PIECES[piece] || '';
+                    console.log(`Square ${squareId}: ${piece} (${PIECES[piece] || 'empty'})`);
+                } else {
+                    console.error(`Square element not found: ${squareId}`);
                 }
             }
         }
         document.getElementById('turn').textContent = isWhiteTurn ? "White's turn" : "Black's turn";
+        console.log("Board update complete");
     }
 
     function isValidMove(move) {
@@ -181,7 +188,17 @@
         board[toRank][toFile] = board[fromRank][fromFile];
         board[fromRank][fromFile] = ' ';
 
-        console.log("Board state after move:", board);
+        console.log("Board state after move:");
+        board.forEach((row, index) => {
+            console.log(`${8 - index}: ${row.join(' ')}`);
+        });
+    }
+
+    function logBoardState() {
+        console.log("Current board state:");
+        board.forEach((row, index) => {
+            console.log(`${8 - index}: ${row.join(' ')}`);
+        });
     }
 
     window.handleMove = function() {
@@ -191,9 +208,10 @@
         if (isValidMove(move)) {
             makeMove(move);
             isWhiteTurn = !isWhiteTurn;
-            updateBoard();  // Make sure this line is present
+            updateBoard();
             moveInput.value = '';
             console.log("Move made successfully");
+            logBoardState();
         } else {
             alert('Illegal move. Try again.');
             moveInput.value = '';
