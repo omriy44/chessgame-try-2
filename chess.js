@@ -310,7 +310,7 @@ function computerMove() {
     console.log("Starting computer move");
     
     const startTime = Date.now();
-    const timeLimit = 3000; // 3 seconds time limit
+    const timeLimit = 6000; // 6 seconds time limit
 
     const possibleMoves = getAllPossibleMoves(false);
     
@@ -335,7 +335,32 @@ function computerMove() {
 
         const oldBoard = JSON.parse(JSON.stringify(board));
         makeMove(move);
-        const score = evaluateBoard();
+        
+        // Evaluate this move
+        let score = evaluateBoard();
+        
+        // Look one move ahead
+        const opponentMoves = getAllPossibleMoves(true);
+        let worstOpponentMove = Infinity;
+        
+        for (const opponentMove of opponentMoves) {
+            const oldOpponentBoard = JSON.parse(JSON.stringify(board));
+            makeMove(opponentMove);
+            const opponentScore = evaluateBoard();
+            if (opponentScore < worstOpponentMove) {
+                worstOpponentMove = opponentScore;
+            }
+            board = oldOpponentBoard;
+            
+            if (Date.now() - startTime > timeLimit) {
+                console.log("Time limit reached during opponent move evaluation");
+                break;
+            }
+        }
+        
+        // Consider the worst opponent move in our evaluation
+        score = Math.min(score, worstOpponentMove);
+        
         board = oldBoard;
 
         if (score > bestScore) {
