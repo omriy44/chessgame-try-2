@@ -64,6 +64,13 @@ function updateBoard() {
         }
     }
     document.getElementById('turn').textContent = isPlayerTurn ? "Your turn" : "Computer's turn";
+
+    if (!checkBoardIntegrity()) {
+        console.error("Board integrity check failed. Reinitializing the board.");
+        initializeBoard();
+        // Update the visual representation again with the reinitialized board
+        // ...
+    }
 }
 
 function drag(event) {
@@ -120,15 +127,8 @@ function isValidMove(move, isWhite) {
         return false;
     }
 
-    // Add piece-specific move validation here
-    // For now, we'll allow any move that's not to the same square
-    if (from === to) {
-        console.log(`Invalid move: Cannot move to the same square`);
-        return false;
-    }
-
-    console.log(`Move ${move} is valid`);
-    return true;
+    // For simplicity, we'll allow any move that's not to the same square
+    return from !== to;
 }
 
 function makeMove(move) {
@@ -176,6 +176,8 @@ function undoMove(move) {
 
 function computerMove() {
     console.log("Starting computer move");
+    console.log("Current board state:", JSON.stringify(board));
+
     const possibleMoves = getAllPossibleMoves(false);
     console.log(`Possible moves: ${possibleMoves.length}`);
 
@@ -189,55 +191,19 @@ function computerMove() {
         return;
     }
 
-    // Evaluate all moves and sort them
-    const evaluatedMoves = possibleMoves.map(move => ({
-        move: move,
-        score: evaluateMove(move)
-    })).sort((a, b) => b.score - a.score);
-
-    // Choose randomly from the top 3 moves (or fewer if there are less than 3 moves)
-    const topMoves = evaluatedMoves.slice(0, Math.min(3, evaluatedMoves.length));
-    const chosenMove = topMoves[Math.floor(Math.random() * topMoves.length)].move;
+    // Choose a random move
+    const randomIndex = Math.floor(Math.random() * possibleMoves.length);
+    const chosenMove = possibleMoves[randomIndex];
 
     console.log(`Computer chooses move: ${chosenMove}`);
     makeMove(chosenMove);
     isPlayerTurn = true;
     updateBoard();
-}
 
-function evaluateMove(move) {
-    const [from, to] = move.split('-');
-    const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
-    const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
-
-    const movingPiece = board[fromRank][fromFile];
-    const capturedPiece = board[toRank][toFile];
-
-    let score = 0;
-
-    // Prioritize captures
-    if (capturedPiece !== ' ') {
-        score += PIECE_VALUES[capturedPiece.toUpperCase()];
-    }
-
-    // Prioritize pawn advancement
-    if (movingPiece.toLowerCase() === 'p') {
-        score += (7 - toRank); // More points for advancing further
-    }
-
-    // Slight penalty for moving the same piece multiple times in the opening
-    if (moveCount < 10) {
-        score -= 1;
-    }
-
-    // Random factor to add some variety
-    score += Math.random() * 0.2 - 0.1;
-
-    return score;
+    console.log("Board after computer move:", JSON.stringify(board));
 }
 
 function getAllPossibleMoves(isWhite) {
-    console.log(`Getting all possible moves for ${isWhite ? 'white' : 'black'}`);
     const moves = [];
     for (let i = 0; i < BOARD_SIZE; i++) {
         for (let j = 0; j < BOARD_SIZE; j++) {
@@ -248,19 +214,14 @@ function getAllPossibleMoves(isWhite) {
                     for (let y = 0; y < BOARD_SIZE; y++) {
                         const to = `${String.fromCharCode(97 + y)}${8 - x}`;
                         const move = `${from}-${to}`;
-                        console.log(`Checking move: ${move} for piece ${piece}`);
-                        const isValid = isValidMove(move, isWhite);
-                        console.log(`Is move ${move} valid? ${isValid}`);
-                        if (isValid) {
+                        if (isValidMove(move, isWhite)) {
                             moves.push(move);
-                            console.log(`Valid move found: ${move}`);
                         }
                     }
                 }
             }
         }
     }
-    console.log(`Total valid moves found: ${moves.length}`);
     return moves;
 }
 
