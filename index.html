@@ -4,28 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chess.css">
 </head>
 <body>
-    <div id="game-container">
-        <h1>Chess Game</h1>
-        <div id="board-container">
-            <div id="rank-labels">
-                <div>8</div><div>7</div><div>6</div><div>5</div>
-                <div>4</div><div>3</div><div>2</div><div>1</div>
-            </div>
-            <div id="board"></div>
-            <div id="file-labels">
-                <div>a</div><div>b</div><div>c</div><div>d</div>
-                <div>e</div><div>f</div><div>g</div><div>h</div>
-            </div>
-        </div>
-        <div id="controls">
-            <p id="turn">White's turn</p>
-            <input type="text" id="move" placeholder="Enter move (e.g., e2-e4)">
-            <button onclick="handleMove()">Make Move</button>
-        </div>
-    </div>
+    <div id="board"></div>
+    <div id="turn"></div>
     <script src="chess.js"></script>
 </body>
 </html>
