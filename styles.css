@@ -1,5 +1,4 @@
 body {
-body {
     font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
@@ -13,13 +12,22 @@ body {
     text-align: center;
 }
 
+#board-container {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: auto auto;
+    gap: 5px;
+    margin: 20px auto;
+}
+
 #board {
     display: grid;
     grid-template-columns: repeat(8, 50px);
     grid-template-rows: repeat(8, 50px);
     gap: 1px;
     border: 2px solid #333;
-    margin: 20px auto;
+    grid-column: 2;
+    grid-row: 1;
 }
 
 .square {
@@ -39,6 +47,26 @@ body {
     background-color: #b58863;
 }
 
+#file-labels, #rank-labels {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    font-weight: bold;
+}
+
+#file-labels {
+    grid-column: 2;
+    grid-row: 2;
+    height: 20px;
+}
+
+#rank-labels {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    width: 20px;
+}
+
 #controls {
     margin-top: 20px;
 }
@@ -47,3 +75,4 @@ input, button {
     margin: 5px;
     padding: 5px;
 }
+
