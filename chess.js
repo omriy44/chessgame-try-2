@@ -9,10 +9,17 @@
     };
 
     function initializeBoard() {
-        board[7] = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
-        board[6] = Array(8).fill('P');
-        board[0] = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
-        board[1] = Array(8).fill('p');
+        board = [
+            ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+            ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+        ];
+        console.log("Initial board state:", board);
     }
 
     function createBoardDOM() {
@@ -167,20 +174,30 @@
         const [fromFile, fromRank] = [from.charCodeAt(0) - 97, 8 - parseInt(from[1])];
         const [toFile, toRank] = [to.charCodeAt(0) - 97, 8 - parseInt(to[1])];
 
-        // Move
+        console.log(`Moving piece from [${fromRank},${fromFile}] to [${toRank},${toFile}]`);
+        console.log(`Piece being moved: ${board[fromRank][fromFile]}`);
+
+        // Move the piece
+        board[toRank][toFile] = board[fromRank][fromFile];
+        board[fromRank][fromFile] = ' ';
+
+        console.log("Board state after move:", board);
     }
 
     window.handleMove = function() {
         const moveInput = document.getElementById('move');
         const move = moveInput.value.toLowerCase();
+        console.log("Attempting move:", move);
         if (isValidMove(move)) {
             makeMove(move);
             isWhiteTurn = !isWhiteTurn;
-            updateBoard();
+            updateBoard();  // Make sure this line is present
             moveInput.value = '';
+            console.log("Move made successfully");
         } else {
             alert('Illegal move. Try again.');
-            moveInput.value = '';  // Clear the input field after an illegal move
+            moveInput.value = '';
+            console.log("Illegal move attempted");
         }
     };
 
